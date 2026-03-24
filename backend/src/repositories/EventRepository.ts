@@ -24,10 +24,10 @@ export class EventRepository {
 
   async findByOrganizer(organizerId: string, limit = 50): Promise<IEvent[]> {
     try {
-      return await Event.find({ organizerId })
-        .populate('organizerId', 'firstName lastName')
+      const events = await Event.find({ organizerId })
         .sort({ createdAt: -1 })
         .limit(limit);
+      return events;
     } catch (error) {
       logger.error('Error finding events by organizer:', error);
       throw error;

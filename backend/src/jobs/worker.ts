@@ -29,4 +29,5 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
+
 logger.info('✅ Worker is running and processing jobs...');

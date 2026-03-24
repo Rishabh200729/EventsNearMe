@@ -35,7 +35,14 @@ export class EventService {
       throw error;
     }
   }
-
+  async getEventsByOrganizer(organizerId: string): Promise<IEvent[]> {
+    try {
+      return await this.eventRepo.findByOrganizer(organizerId);
+    } catch (error) {
+      logger.error('Error in getEventsByOrganizer service:', error);
+      throw error;
+    }
+  }
   async getEventById(id: string, incrementViews = true): Promise<IEvent | null> {
     try {
       const event = await this.eventRepo.findById(id);
@@ -156,7 +163,7 @@ export class EventService {
         throw new Error('Event not found');
       }
 
-      if (event.organizerId !== organizerId) {
+      if (event.organizerId._id.toString() !== organizerId.toString()) {
         throw new Error('Unauthorized to delete this event');
       }
 

@@ -40,7 +40,21 @@ export class EventController {
         // For now, return trending events as default
         events = await this.eventService.getTrendingEvents(parseInt(limit as string));
       }
-      console.log('Fetched events:', events);
+      res.json({
+        success: true,
+        data: events,
+        count: events.length
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getEventsByOrganizer = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      console.log(req.user);
+      const events = await this.eventService.getEventsByOrganizer(req.user.id);
+      console.log("events", events);
       res.json({
         success: true,
         data: events,
@@ -148,6 +162,14 @@ export class EventController {
   deleteEvent = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
+      if(typeof id !== 'string') {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid event ID'
+        });
+        return;
+      }
+      console.log("req.params",req.params);
       const deleted = await this.eventService.deleteEvent(id, req.user!._id);
 
       if (!deleted) {

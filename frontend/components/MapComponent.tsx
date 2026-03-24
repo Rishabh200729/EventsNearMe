@@ -83,7 +83,7 @@ export default function MapComponent({ events, center, autoFit = true }: { event
                                         {event.name}
                                     </h3>
                                     <Link
-                                        href={`#${event._id}`}
+                                        href={`/events/${event._id}`}
                                         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-colors"
                                     >
                                         View Details <ArrowUpRight className="w-3 h-3" />

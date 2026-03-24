@@ -1,5 +1,4 @@
 import Redis from 'ioredis';
-
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
 export const redisClient = new Redis(redisUrl, {
@@ -8,7 +7,7 @@ export const redisClient = new Redis(redisUrl, {
 });
 
 redisClient.on('connect', () => {
-  console.log('✅ Connected to Redis');
+  console.log('✅ Connected to Redis', redisClient);
 });
 
 redisClient.on('error', (err) => {

@@ -15,7 +15,6 @@ export const authenticate = async (
 ): Promise<void> => {
   try {
     let token: string | undefined;
-
     // Check for token in header
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
@@ -82,7 +81,6 @@ export const requireOrganizer = (
   res: Response,
   next: NextFunction
 ): void => {
-  console.log(req.user);
   if (req.user && (req.user.role === 'organizer' || req.user.role === 'admin')) {
     next();
   } else {

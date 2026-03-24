@@ -20,23 +20,28 @@ export const analyticsQueue = new Queue('analytics', {
 });
 
 // Notification job processor
-notificationQueue.process('send_booking_confirmation', async (job) => {
-  const { bookingId, userEmail, eventName } = job.data;
+notificationQueue.process("send_booking_confirmation",async (job, done) => {
+  const { bookingId } = job.data;
 
   try {
     // TODO: Implement actual email sending
-    logger.info(`Sending booking confirmation email to ${userEmail} for event ${eventName}`);
-
     // Simulate email sending
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    logger.info(`Booking confirmation sent for booking ${bookingId}`);
+    logger.info(`Booking confirmation sent for booking ${bookingId}`,"info");
+    done();
   } catch (error) {
     logger.error('Error sending booking confirmation:', error);
     throw error;
   }
 });
+notificationQueue.on('progress', (job, progress) => {
+  logger.info(`Job ${job.id} is ${progress}% complete`);
+});
 
+notificationQueue.on("completed", (job) => {
+  logger.info(`Job ${job.id} completed successfully`);
+});
 // Analytics job processor
 analyticsQueue.process('update_trending_scores', async (job) => {
   try {
