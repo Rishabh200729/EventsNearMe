@@ -8,7 +8,7 @@ export const logout = async (formData: FormData) => {
 
     if (token) {
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api"}/auth/logout`, {
+            await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/auth/logout`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`

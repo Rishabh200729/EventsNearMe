@@ -88,7 +88,6 @@ export default function Event({ id, title, desc, date, category, userRole, isJoi
                 </p>
             </div>
 
-            {userRole === "Participator" && (
                 <div className="mt-8 flex items-center justify-between">
                     <SubmitButton
                         onClick={handleJoin}
@@ -107,7 +106,6 @@ export default function Event({ id, title, desc, date, category, userRole, isJoi
                         )}
                     </SubmitButton>
                 </div>
-            )}
         </div>
     );
 }

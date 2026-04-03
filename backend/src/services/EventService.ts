@@ -106,13 +106,14 @@ export class EventService {
 
       // Try cache first
       const cached = await redisClient.get(cacheKey);
+      console.log("Trending events from redis cache", cached);
       if (cached) {
         logger.info('Serving trending events from cache');
         return JSON.parse(cached);
       }
 
       const events = await this.eventRepo.getTrending(limit);
-
+      console.log(events);
       // Cache for 10 minutes
       await redisClient.setex(cacheKey, 600, JSON.stringify(events));
 
@@ -163,7 +164,7 @@ export class EventService {
         throw new Error('Event not found');
       }
 
-      if (event.organizerId._id.toString() !== organizerId.toString()) {
+      if ((event.organizerId as any)._id?.toString() !== organizerId.toString() && event.organizerId.toString() !== organizerId.toString()) {
         throw new Error('Unauthorized to delete this event');
       }
 

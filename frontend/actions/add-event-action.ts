@@ -32,7 +32,7 @@ export async function addEventAction(formData: FormData) {
         price: 0
     };
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api"}/events`, {
+    const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/events`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

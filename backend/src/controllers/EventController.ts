@@ -162,14 +162,14 @@ export class EventController {
   deleteEvent = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      if(typeof id !== 'string') {
+      if (typeof id !== 'string') {
         res.status(400).json({
           success: false,
           error: 'Invalid event ID'
         });
         return;
       }
-      console.log("req.params",req.params);
+      console.log("req.params", req.params);
       const deleted = await this.eventService.deleteEvent(id, req.user!._id);
 
       if (!deleted) {

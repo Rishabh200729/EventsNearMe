@@ -7,7 +7,7 @@ export const redisClient = new Redis(redisUrl, {
 });
 
 redisClient.on('connect', () => {
-  console.log('✅ Connected to Redis', redisClient);
+  console.log('✅ Connected to Redis');
 });
 
 redisClient.on('error', (err) => {

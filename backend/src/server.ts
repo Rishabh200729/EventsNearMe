@@ -12,7 +12,6 @@ redisClient.connect().catch(console.error);
 // Start server
 app.listen(PORT, () => {
     logger.info(`🚀 Server running on port ${PORT}`);
-    console.log(`🚀 Server running on port ${PORT}`);
 });
 
 // Graceful shutdown

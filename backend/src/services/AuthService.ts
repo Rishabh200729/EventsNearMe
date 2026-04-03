@@ -34,7 +34,7 @@ export class AuthService {
       });
 
       // Generate JWT token
-      const token = this.generateToken(user._id);
+      const token = this.generateToken(user._id.toString());
 
       logger.info(`User registered: ${user._id} (${user.email})`);
       return { user, token };
@@ -63,7 +63,7 @@ export class AuthService {
       }
 
       // Generate JWT token
-      const token = this.generateToken(user._id);
+      const token = this.generateToken(user._id.toString());
 
       logger.info(`User logged in: ${user._id} (${user.email})`);
       return { user, token };
@@ -149,7 +149,7 @@ export class AuthService {
       const resetToken = crypto.randomBytes(32).toString('hex');
       const resetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      await this.userRepo.setPasswordResetToken(user._id, resetToken, resetExpires);
+      await this.userRepo.setPasswordResetToken(user._id.toString(), resetToken, resetExpires);
 
       // TODO: Send email with reset token
       // await this.emailService.sendPasswordResetEmail(user.email, resetToken);
@@ -168,7 +168,7 @@ export class AuthService {
         throw new Error('Invalid or expired reset token');
       }
 
-      await this.userRepo.updatePassword(user._id, newPassword);
+      await this.userRepo.updatePassword(user._id.toString(), newPassword);
 
       logger.info(`Password reset successful for user: ${user._id}`);
     } catch (error) {
@@ -184,7 +184,7 @@ export class AuthService {
         throw new Error('Invalid or expired verification token');
       }
 
-      const verifiedUser = await this.userRepo.verifyEmail(user._id);
+      const verifiedUser = await this.userRepo.verifyEmail(user._id.toString());
 
       logger.info(`Email verified for user: ${user._id}`);
       return verifiedUser;

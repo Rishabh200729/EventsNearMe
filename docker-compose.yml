@@ -1,0 +1,106 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/eventsnearme
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/src:/app/src
+    command: ["npm", "run", "dev"]
+    restart: unless-stopped
+    networks:
+      - eventsnearme
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    command: ["npx", "tsx", "watch", "src/jobs/worker.ts"]
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/eventsnearme
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/src:/app/src
+    restart: unless-stopped
+    networks:
+      - eventsnearme
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - INTERNAL_BACKEND_URL=http://backend:5000/api
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: ["npm", "run", "dev"]
+    restart: unless-stopped
+    networks:
+      - eventsnearme
+
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=eventsnearme
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/docker/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    restart: unless-stopped
+    networks:
+      - eventsnearme
+
+  redis:
+    image: redis:trixie
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - eventsnearme
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    restart: unless-stopped
+    volumes: 
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - eventsnearme
+
+volumes:
+  mongodb_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  eventsnearme:
+    driver: bridge

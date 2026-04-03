@@ -13,7 +13,7 @@ export class EventRepository {
     }
   }
 
-  async findById(id: Types.ObjectId): Promise<IEvent | null> {
+  async findById(id: string): Promise<IEvent | null> {
     try {
       return await Event.findById(id).populate('organizerId', 'firstName lastName');
     } catch (error) {
@@ -158,13 +158,13 @@ export class EventRepository {
         .sort({ createdAt: -1 }).limit(200); // Get recent events
 
       // Calculate trending score
-      const trendingEvents = events.map(event => ({
+      const trendingEvents = events.map((event: any) => ({
         ...event.toObject(),
         score: (event.views * 0.3) + (event.bookmarks * 0.5) + (event.recentBookings * 0.2)
       }));
 
       return trendingEvents
-        .sort((a, b) => b.score - a.score)
+        .sort((a: any, b: any) => b.score - a.score)
         .slice(0, limit);
     } catch (error) {
       logger.error('Error getting trending events:', error);

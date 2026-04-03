@@ -1,33 +1,42 @@
-import { notificationQueue, analyticsQueue } from './jobQueue.js';
-import { logger } from '../config/logger.js';
+import amqp from "amqplib";
+import { logger } from "../config/logger.js";
 
-logger.info('🚀 Starting background job worker...');
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
 
-// Handle graceful shutdown
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received, shutting down worker...');
-  await notificationQueue.close();
-  await analyticsQueue.close();
-  process.exit(0);
-});
+async function startWorker() {
+  try {
+    const connection = await amqp.connect(RABBITMQ_URL);
+    const channel = await connection.createChannel();
 
-process.on('SIGINT', async () => {
-  logger.info('SIGINT received, shutting down worker...');
-  await notificationQueue.close();
-  await analyticsQueue.close();
-  process.exit(0);
-});
+    await channel.assertQueue('notifications');
+    await channel.assertQueue('analytics');
 
-// Keep the worker running
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception in worker:', error);
-  process.exit(1);
-});
+    logger.info('Worker connected to RabbitMQ');
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection in worker:', reason);
-  process.exit(1);
-});
+    // Notification worker
+    channel.consume('notifications', (msg: any) => {
+      if (msg) {
+        const data = JSON.parse(msg.content.toString());
+        logger.info('Processing notification:', data);
+        // TODO: Implement actual notification sending
+        channel.ack(msg);
+      }
+    });
 
-
-logger.info('✅ Worker is running and processing jobs...');
+    // Analytics worker
+    channel.consume('analytics', (msg: any) => {
+      if (msg) {
+        const data = JSON.parse(msg.content.toString());
+        logger.info('Processing analytics:', data);
+        // TODO: Implement actual analytics processing
+        channel.ack(msg);
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to start worker', error);
+  }
+}
+async function start() {
+  await startWorker();
+}
+start();

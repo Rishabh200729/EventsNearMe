@@ -9,7 +9,7 @@ export async function validateRequest() {
     }
 
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api"}/auth/me`, {
+        const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/auth/me`, {
             headers: {
                 "Authorization": `Bearer ${token}`
             },

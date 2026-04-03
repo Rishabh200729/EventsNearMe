@@ -1,6 +1,5 @@
 "use client";
 import { loginAction } from "@/actions/login-action"
-import { LogIn } from "lucide-react";
 import SubmitButton from "@/components/SubmitButton";
 
 export default function Login() {
@@ -14,9 +13,6 @@ export default function Login() {
         <div className="min-h-[80vh] flex items-center justify-center">
             <div className="glass-card w-full max-w-md space-y-8 animate-float">
                 <div className="text-center space-y-2">
-                    <div className="inline-flex p-3 rounded-2xl bg-primary/20 text-primary mb-2">
-                        <LogIn className="w-8 h-8" />
-                    </div>
                     <h1 className="text-3xl font-bold tracking-tight premium-gradient bg-clip-text text-transparent">
                         Welcome Back
                     </h1>

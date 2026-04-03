@@ -10,7 +10,7 @@ export async function signUpAction(formData: FormData) {
   const role = formData.get("role") as string;
 
   try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api"}/auth/register`, {
+      const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/auth/register`, {
           method: "POST",
           headers: {
               "Content-Type": "application/json",

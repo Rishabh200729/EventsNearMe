@@ -11,7 +11,7 @@ export async function deleteEventAction(eventId: string) {
     }
 
     try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+        const backendUrl = (process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000";
         const res = await fetch(`${backendUrl}/events/${eventId}`, {
             method: "DELETE",
             headers: {

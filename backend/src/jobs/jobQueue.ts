@@ -1,101 +1,36 @@
-import Queue from 'bull';
-import { redisClient } from '../config/redis.config.js';
+import amqp from 'amqplib';
 import { logger } from '../config/logger.js';
 
-// Create job queues
-export const notificationQueue = new Queue('notifications', {
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD
-  }
-});
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
 
-export const analyticsQueue = new Queue('analytics', {
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD
-  }
-});
+let channel: amqp.Channel | null = null;
 
-// Notification job processor
-notificationQueue.process("send_booking_confirmation",async (job, done) => {
-  const { bookingId } = job.data;
-
+export async function connectQueue() {
   try {
-    // TODO: Implement actual email sending
-    // Simulate email sending
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    logger.info(`Booking confirmation sent for booking ${bookingId}`,"info");
-    done();
+    const connection = await amqp.connect(RABBITMQ_URL);
+    channel = await connection.createChannel();
+    await channel.assertQueue('notifications');
+    await channel.assertQueue('analytics');
+    logger.info('Connected to RabbitMQ');
   } catch (error) {
-    logger.error('Error sending booking confirmation:', error);
-    throw error;
+    logger.error('Failed to connect to RabbitMQ', error);
   }
-});
-notificationQueue.on('progress', (job, progress) => {
-  logger.info(`Job ${job.id} is ${progress}% complete`);
-});
+}
 
-notificationQueue.on("completed", (job) => {
-  logger.info(`Job ${job.id} completed successfully`);
-});
-// Analytics job processor
-analyticsQueue.process('update_trending_scores', async (job) => {
-  try {
-    // TODO: Implement trending score updates
-    logger.info('Updating trending event scores');
+export async function sendNotification(data: any) {
+  if (!channel) return;
+  await channel.sendToQueue('notifications', Buffer.from(JSON.stringify(data)));
+  console.log("SENT NOTIFICATION");
+}
 
-    // This would typically recalculate trending scores
-    // based on recent activity, views, bookmarks, etc.
+export async function sendAnalytics(data: any) {
+  if (!channel) return;
+  await channel.sendToQueue('analytics', Buffer.from(JSON.stringify(data)));
+  console.log("SENT ANALYTICS");
+}
 
-    logger.info('Trending scores updated successfully');
-  } catch (error) {
-    logger.error('Error updating trending scores:', error);
-    throw error;
-  }
-});
-
-// Cleanup job processor
-analyticsQueue.process('cleanup_expired_reservations', async (job) => {
-  try {
-    // TODO: Implement cleanup logic
-    logger.info('Cleaning up expired reservations');
-
-    // This would cancel expired reservations and free up seats
-
-    logger.info('Expired reservations cleaned up');
-  } catch (error) {
-    logger.error('Error cleaning up expired reservations:', error);
-    throw error;
-  }
-});
-
-// Error handling
-notificationQueue.on('failed', (job, err) => {
-  logger.error(`Notification job ${job.id} failed:`, err);
-});
-
-analyticsQueue.on('failed', (job, err) => {
-  logger.error(`Analytics job ${job.id} failed:`, err);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  logger.info('Closing job queues...');
-  await notificationQueue.close();
-  await analyticsQueue.close();
-});
-
-process.on('SIGINT', async () => {
-  logger.info('Closing job queues...');
-  await notificationQueue.close();
-  await analyticsQueue.close();
-});
-
-export default {
-  notificationQueue,
-  analyticsQueue
-};
+setTimeout(async () => {
+  await connectQueue();
+  sendNotification("Hello from Node.js!");
+  sendAnalytics("Analytics data");
+}, 10000);

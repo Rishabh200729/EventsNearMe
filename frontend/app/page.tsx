@@ -16,7 +16,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const { category: selectedCategory } = await searchParams;
 
   // Fetch from the Express backend API
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api";
+  const baseUrl = (process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api";
   const url = selectedCategory
     ? `${baseUrl}/events?category=${selectedCategory}`
     : `${baseUrl}/events`;

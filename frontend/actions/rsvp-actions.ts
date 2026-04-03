@@ -12,7 +12,7 @@ export async function joinEventAction(eventId: string) {
     }
 
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api"}/events/${eventId}/bookmark`, {
+        const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/events/${eventId}/bookmark`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${token}`
