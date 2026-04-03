@@ -25,9 +25,10 @@ EventsNearMe is a modern, full-stack application that allows users to discover e
 - **Caching & Brokers:** Redis
 - **Job Processing:** RabbitMQ & Bull (Background worker architecture)
 
-### Infrastructure & DevOps
+### Infrastructure, DevOps & Testing
 - **Containerization:** Docker & Docker Compose (Frontend, Backend, Worker, MongoDB, Redis, RabbitMQ)
 - **Package Managers:** npm / bun / tsx
+- **Testing:** Jest (Backend unit and integration tests)
 
 ---
 
@@ -87,6 +88,13 @@ The easiest way to run this application locally is by using **Docker Compose**, 
    docker-compose down
    ```
 
+5. **Run Tests:**
+   The backend includes a Jest testing suite (currently covering Authentication modules).
+   ```bash
+   cd backend
+   npm test
+   ```
+
 ---
 
 ## 📂 Project Structure
@@ -98,8 +106,12 @@ EventsNearMe/
 │   └── src/
 │       ├── controllers/      # Route handlers
 │       ├── jobs/             # Bull workers and queue setup
+│       ├── middleware/       # Custom Express middlewares
 │       ├── models/           # Mongoose schemas
+│       ├── repositories/     # Data access layer
 │       ├── routes/           # Express routes
+│       ├── services/         # Business logic layer
+│       ├── tests/            # Jest unit and API tests
 │       └── server.ts         # Backend entry point
 ├── frontend/                 # Next.js Application
 │   ├── app/                  # Next.js 13+ App Router
