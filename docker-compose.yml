@@ -12,29 +12,11 @@ services:
     depends_on:
       - mongodb
       - redis
+      - rabbitmq
     volumes:
       - ./backend/logs:/app/logs
       - ./backend/src:/app/src
     command: ["npm", "run", "dev"]
-    restart: unless-stopped
-    networks:
-      - eventsnearme
-
-  worker:
-    build:
-      context: ./backend
-      dockerfile: docker/Dockerfile
-    command: ["npx", "tsx", "watch", "src/jobs/worker.ts"]
-    environment:
-      - NODE_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/eventsnearme
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - mongodb
-      - redis
-    volumes:
-      - ./backend/logs:/app/logs
-      - ./backend/src:/app/src
     restart: unless-stopped
     networks:
       - eventsnearme
@@ -48,6 +30,7 @@ services:
     environment:
       - NODE_ENV=development
       - INTERNAL_BACKEND_URL=http://backend:5000/api
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:5000/api
     depends_on:
       - backend
     volumes:
@@ -90,9 +73,36 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
     restart: unless-stopped
-    volumes: 
+    volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - eventsnearme
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    command: ["npx", "tsx", "watch", "src/jobs/emailWorker.ts"]
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/eventsnearme
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/src:/app/src
+    restart: unless-stopped
     networks:
       - eventsnearme
 

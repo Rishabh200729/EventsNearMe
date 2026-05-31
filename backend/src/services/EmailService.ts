@@ -18,12 +18,12 @@ export class EmailService {
     return this.transporter;
   }
 
-  static async sendBookingConfirmationEmail(to: string, bookingDetails: any) {
+  static async sendBookingConfirmationEmail(to: string,subject: string, bookingDetails: any) {
     console.log(bookingDetails);
     const mailOptions = {
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to,
-      subject: 'Booking Confirmation',
+      subject,
       text: `Your booking has been confirmed. Details - Event: ${bookingDetails.title}, Quantity: ${bookingDetails.quantity}, Total Amount: $${bookingDetails.totalAmount}`,
     };
     const info = await this.getTransporter().sendMail(mailOptions);

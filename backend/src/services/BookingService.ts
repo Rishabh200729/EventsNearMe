@@ -4,7 +4,7 @@ import userRepository from '../repositories/UserRepository.js';
 import { redisClient } from '../config/redis.config.js';
 import { logger } from '../config/logger.js';
 import { IBooking } from '../models/Booking.js';
-import { EmailService } from './EmailService.js';
+import { publishEmailJob } from '../jobs/emailQueue.js';
 
 export class BookingService {
   private bookingRepo = BookingRepository;
@@ -80,14 +80,15 @@ export class BookingService {
 
       logger.info(`Booking created: ${booking._id} for event ${eventId} by user ${userId}`);
 
-      // TODO: Send confirmation notification
-      // await this.notificationService.sendBookingConfirmation(booking);
+      // INFO: Send confirmation notification
       const user = await this.userRepo.findById(userId);
       if(user) {
         logger.info(`Sending booking confirmation email to ${user.email} for booking ${booking._id}`);
-        EmailService.sendBookingConfirmationEmail(user.email, {title : event.title, quantity: booking.quantity, totalAmount: booking.totalAmount}).catch(err => {
-          logger.error(`Failed to send booking confirmation email for booking ${booking._id}:`, err);
-        });
+        await publishEmailJob(
+          user.email,
+          'Booking Confirmation',
+          { title: event.title, quantity: booking.quantity, totalAmount: booking.totalAmount }
+        );
       }
       return booking;
     } finally {

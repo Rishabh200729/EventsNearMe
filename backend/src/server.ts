@@ -3,6 +3,7 @@ import { logger } from './config/logger.js';
 import { connectDB } from './config/database.js';
 import { redisClient } from './config/redis.config.js';
 import { seedDemoUsers } from './seed.js';
+import { connectQueue } from './jobs/emailQueue.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -10,6 +11,7 @@ const PORT = process.env.PORT || 5000;
 await connectDB();
 await seedDemoUsers();
 redisClient.connect().catch(console.error);
+connectQueue();
 
 // Start server
 app.listen(PORT, () => {
