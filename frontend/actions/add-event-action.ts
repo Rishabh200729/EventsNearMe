@@ -1,6 +1,7 @@
 'use server';
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function addEventAction(formData: FormData) {
     const cookieStore = await cookies();
@@ -46,5 +47,7 @@ export async function addEventAction(formData: FormData) {
         throw new Error(data.error || "Failed to create event");
     }
 
-    revalidatePath("/", "page");
+    revalidatePath("/explore");
+    revalidatePath("/dashboard");
+    redirect("/dashboard");
 }

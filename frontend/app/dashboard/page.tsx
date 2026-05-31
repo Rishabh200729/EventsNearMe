@@ -1,6 +1,7 @@
 import { Trash2 } from "lucide-react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import DeleteEventButton from "../../components/delete-event-button";
 
 async function Page() {
@@ -45,6 +46,15 @@ async function Page() {
                     Dashboard
                 </h1>
 
+                <div className="w-full max-w-3xl flex gap-4 mb-6">
+                    <Link href="/create" className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium shadow-sm hover:opacity-90 transition-opacity flex items-center justify-center">
+                        + Create New Event
+                    </Link>
+                    <Link href="/explore" className="px-6 py-2.5 bg-white/5 border border-white/10 text-foreground rounded-xl font-medium hover:bg-white/10 transition-colors flex items-center justify-center">
+                        View All Events
+                    </Link>
+                </div>
+
                 <div className="w-full max-w-3xl border border-slate-200 rounded-2xl p-6">
 
                     <h2 className="text-xl font-semibold mb-4">
@@ -65,7 +75,14 @@ async function Page() {
                                     </p>
 
                                     <p className="text-sm text-gray-500">
-                                        {event.date}
+                                        {new Date(event.date).toLocaleDateString("en-US", {
+                                            weekday: "long",
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
                                     </p>
 
                                     <p className="mt-2 text-gray-700">

@@ -151,12 +151,9 @@ export class EventRepository {
 
   async getTrending(limit = 50): Promise<IEvent[]> {
     try {
-      const events = await Event.find({
-        date: { $gte: new Date() }
-      })
+      const events = await Event.find()
         .populate('organizerId', 'firstName lastName')
         .sort({ createdAt: -1 }).limit(200); // Get recent events
-
       // Calculate trending score
       const trendingEvents = events.map((event: any) => ({
         ...event.toObject(),

@@ -82,6 +82,18 @@ export default function Creator({ user, addOptimisticEvent }: { user: user, addO
                     />
                 </div>
 
+                <div className="space-y-2">
+                    <label htmlFor="price" className="text-sm font-medium text-muted-foreground">Ticket Price</label>
+                    <input
+                        type="number"
+                        name="price"
+                        id="price"
+                        placeholder="Free = 0"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-foreground"
+                        required
+                    />
+                </div>
+
                 <div className="space-y-4 pt-4 border-t border-white/5">
                     <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-primary" />

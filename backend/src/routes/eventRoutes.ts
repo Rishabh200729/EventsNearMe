@@ -19,7 +19,7 @@ router.get('/:id', EventController.getEventById);
 router.use(authenticate);
 
 // Organizer only routes
-router.get('/organizer/events',requireOrganizer, EventController.getEventsByOrganizer)
+router.get('/organizer/events', requireOrganizer, EventController.getEventsByOrganizer)
 // User routes
 router.post('/:id/bookmark', EventController.bookmarkEvent);
 router.delete('/:id/bookmark', EventController.unbookmarkEvent);

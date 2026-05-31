@@ -32,6 +32,10 @@
     @apply border-border selection:bg-primary/30;
   }
 
+  html {
+    font-size: 15.4px;
+  }
+
   body {
     @apply bg-background text-foreground antialiased font-sans;
     background-image:

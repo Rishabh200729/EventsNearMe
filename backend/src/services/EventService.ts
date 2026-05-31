@@ -75,14 +75,13 @@ export class EventService {
       const cached = await redisClient.get(cacheKey);
       if (cached) {
         logger.info('Serving nearby events from cache');
-        console.log("from cache", cached);
         return JSON.parse(cached);
       }
 
       const events = await this.eventRepo.findNearby(longitude, latitude, radius, limit);
 
       // Cache for 5 minutes
-      await redisClient.setex(cacheKey, 300, JSON.stringify(events));
+      await redisClient.set(cacheKey, JSON.stringify(events), "EX", 300);
 
       return events;
     } catch (error) {
@@ -106,16 +105,14 @@ export class EventService {
 
       // Try cache first
       const cached = await redisClient.get(cacheKey);
-      console.log("Trending events from redis cache", cached);
-      if (cached) {
+      if (cached !== null) {
         logger.info('Serving trending events from cache');
         return JSON.parse(cached);
       }
 
       const events = await this.eventRepo.getTrending(limit);
-      console.log(events);
       // Cache for 10 minutes
-      await redisClient.setex(cacheKey, 600, JSON.stringify(events));
+      await redisClient.set(cacheKey, JSON.stringify(events), "EX", 600);
 
       return events;
     } catch (error) {
@@ -219,7 +216,6 @@ export class EventService {
     try {
       // Invalidate trending cache
       await redisClient.del('trending:events');
-      console.log(await redisClient.keys("*"))
       // Clear all location-specific nearby caches
       const nearbyKeys = await redisClient.keys('nearby:*');
       if (nearbyKeys.length > 0) {

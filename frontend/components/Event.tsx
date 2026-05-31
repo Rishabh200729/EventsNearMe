@@ -1,6 +1,7 @@
 "use client";
-import { Calendar, CheckCircle, Loader2, Music, Code, Users, Trophy, Palette, Info, MapPin } from "lucide-react";
+import { Calendar, CheckCircle, Loader2, Music, Code, Users, Trophy, Palette, Info, MapPin, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 import { joinEventAction } from "@/actions/rsvp-actions";
 import SubmitButton from "./SubmitButton";
 
@@ -17,6 +18,7 @@ interface propTypes {
         firstName: string;
         lastName: string;
     };
+    isOrganizer?: boolean;
 }
 
 const CategoryIcon = ({ category }: { category?: string }) => {
@@ -30,7 +32,7 @@ const CategoryIcon = ({ category }: { category?: string }) => {
     }
 };
 
-export default function Event({ id, title, desc, date, category, userRole, isJoined: initialJoined, distance, organizer }: propTypes) {
+export default function Event({ id, title, desc, date, category, userRole, isJoined: initialJoined, distance, organizer, isOrganizer }: propTypes) {
     const [isJoined, setIsJoined] = useState(initialJoined);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -53,9 +55,11 @@ export default function Event({ id, title, desc, date, category, userRole, isJoi
             <div className="flex-1 space-y-4">
                 <div className="space-y-3">
                     <div className="flex items-start justify-between gap-4">
-                        <h3 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors">
-                            {title}
-                        </h3>
+                        <Link href={`/events/${id}`} className="hover:underline decoration-primary/30 underline-offset-4">
+                            <h3 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors">
+                                {title}
+                            </h3>
+                        </Link>
                         {category && (
                             <div className="shrink-0 p-2 rounded-lg bg-white/5 text-primary border border-white/10 group-hover:border-primary/50 transition-colors" title={category}>
                                 <CategoryIcon category={category} />
@@ -66,7 +70,13 @@ export default function Event({ id, title, desc, date, category, userRole, isJoi
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-primary" />
-                            <span>{new Date(date).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
+                            <span suppressHydrationWarning>
+                                {(() => {
+                                    const d = new Date(date);
+                                    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                                    return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+                                })()}
+                            </span>
                         </div>
                         {organizer && (
                             <div className="flex items-center gap-2">
@@ -88,24 +98,33 @@ export default function Event({ id, title, desc, date, category, userRole, isJoi
                 </p>
             </div>
 
-                <div className="mt-8 flex items-center justify-between">
+            {!isOrganizer && (
+                <div className="mt-8 flex items-center gap-3">
+                    <Link
+                        href={`/events/${id}`}
+                        className="premium-button text-sm flex-1 flex items-center justify-center gap-2 py-2.5"
+                    >
+                        Book Now
+                        <ArrowRight className="w-4 h-4" />
+                    </Link>
                     <SubmitButton
                         onClick={handleJoin}
                         disabled={isJoined}
                         isLoading={isLoading}
                         loadingText="Joining..."
-                        className={`premium-button text-sm w-full flex items-center justify-center gap-2 ${isJoined ? 'opacity-70 cursor-default' : ''}`}
+                        className={`text-sm flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition-colors ${isJoined ? 'opacity-70 cursor-default' : ''}`}
                     >
                         {isJoined ? (
                             <>
                                 <CheckCircle className="w-4 h-4" />
-                                Registered
+                                Joined
                             </>
                         ) : (
-                            "Join Event"
+                            "Join"
                         )}
                     </SubmitButton>
                 </div>
+            )}
         </div>
     );
 }

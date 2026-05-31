@@ -8,7 +8,7 @@ import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-export default function NearbyEvents({ initialEvents = [] }: { initialEvents?: any[] }) {
+export default function NearbyEvents({ user }: { user?: any }) {
     const [permissionDenied, setPermissionDenied] = useState(false);
     const [userLoc, setUserLoc] = useState<[number, number] | null>(null);
     const [geoError, setGeoError] = useState<string | null>(null);
@@ -19,18 +19,14 @@ export default function NearbyEvents({ initialEvents = [] }: { initialEvents?: a
         fetcher,
         { revalidateOnFocus: false }
     );
-    console.log("swrData", swrData);
-
     const nearbyEvents = swrData?.data || [];
     const loading = !userLoc || swrLoading;
     const error = geoError || (swrError ? "Failed to load nearby events." : null);
 
-    // 2. Derived State: Instant mathematical calculation on render. No `useState` or map merging `useEffect`!
-    const mapEvents = Array.from(
-        new Map([...initialEvents, ...nearbyEvents].map(evt => [evt._id, evt])).values()
-    );
+    // 2. Direct map assignment
+    const mapEvents = nearbyEvents;
 
-    // 3. Auto-sync SWR when global events (initialEvents/Server Action) change
+    // 3. Auto-sync SWR when global state changes 
     useEffect(() => {
         if (userLoc) {
             // Slight delay ensures the backend Redis cache was officially deleted before we re-fetch
@@ -38,7 +34,7 @@ export default function NearbyEvents({ initialEvents = [] }: { initialEvents?: a
             return () => clearTimeout(timer);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [initialEvents]);
+    }, []);
 
     // 4. Initial Geolocation fetch (Runs exactly once on mount)
     useEffect(() => {
@@ -113,7 +109,7 @@ export default function NearbyEvents({ initialEvents = [] }: { initialEvents?: a
                 </div>
             ) : nearbyEvents.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {nearbyEvents.map((event) => (
+                    {nearbyEvents.map((event: any) => (
                         <Event
                             key={event._id}
                             id={event._id}
@@ -124,6 +120,7 @@ export default function NearbyEvents({ initialEvents = [] }: { initialEvents?: a
                             organizer={event.organizerId}
                             isJoined={false}
                             distance={event.distance}
+                            isOrganizer={user?.id === event.organizerId?._id || user?.id === event.organizerId}
                         />
                     ))}
                 </div>

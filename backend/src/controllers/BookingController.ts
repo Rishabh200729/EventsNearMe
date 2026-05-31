@@ -12,7 +12,7 @@ export class BookingController {
       const { quantity = 1 } = req.body;
 
       const booking = await this.bookingService.createBooking(
-        eventId,
+        eventId as string,
         req.user!._id,
         quantity
       );
@@ -52,7 +52,7 @@ export class BookingController {
       const { eventId } = req.params;
 
       const bookings = await this.bookingService.getEventBookings(
-        eventId,
+        eventId as string,
         req.user!._id
       );
 
@@ -71,7 +71,7 @@ export class BookingController {
     try {
       const { id } = req.params;
 
-      const booking = await this.bookingService.cancelBooking(id, req.user!._id);
+      const booking = await this.bookingService.cancelBooking(id as string, req.user!._id);
 
       if (!booking) {
         res.status(404).json({
@@ -96,7 +96,7 @@ export class BookingController {
     try {
       const { eventId } = req.params;
 
-      const stats = await this.bookingService.getBookingStats(eventId, req.user!._id);
+      const stats = await this.bookingService.getBookingStats(eventId as string, req.user!._id);
 
       res.json({
         success: true,

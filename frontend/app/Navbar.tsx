@@ -15,17 +15,38 @@ export default async function Navbar() {
       </Link>
 
       <div className="flex items-center ml-auto gap-6">
-        {user && user.role === "organizer" && (
+        {user && (
           <Link
-            href="/dashboard"
+            href="/explore"
             className="text-sm font-medium hover:text-primary transition-colors"
           >
-            Dashboard
+            Explore
           </Link>
+        )}
+        {user && user.role === "organizer" && (
+          <>
+            <Link
+              href="/create"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Create Event
+            </Link>
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Dashboard
+            </Link>
+          </>
         )}
         {user ? (
           <>
-            {/* Redundant link removed */}
+            <Link
+              href="/profile"
+              className="text-sm font-medium hover:text-primary transition-colors pr-2"
+            >
+              Profile
+            </Link>
             <form action={logout}>
               <button
                 type="submit"

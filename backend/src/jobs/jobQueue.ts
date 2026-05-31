@@ -20,13 +20,11 @@ export async function connectQueue() {
 export async function sendNotification(data: any) {
   if (!channel) return;
   await channel.sendToQueue('notifications', Buffer.from(JSON.stringify(data)));
-  console.log("SENT NOTIFICATION");
 }
 
 export async function sendAnalytics(data: any) {
   if (!channel) return;
   await channel.sendToQueue('analytics', Buffer.from(JSON.stringify(data)));
-  console.log("SENT ANALYTICS");
 }
 
 setTimeout(async () => {

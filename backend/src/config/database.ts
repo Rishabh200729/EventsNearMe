@@ -11,7 +11,6 @@ export const connectDB = async (): Promise<void> => {
     });
 
     logger.info('✅ Connected to MongoDB');
-    console.log('✅ Connected to MongoDB');
 
     // Create geospatial indexes
     const db = mongoose.connection.db;
@@ -21,7 +20,6 @@ export const connectDB = async (): Promise<void> => {
     }
   } catch (error) {
     logger.error('❌ MongoDB connection error:', error);
-    console.error('❌ MongoDB connection error:', error);
     process.exit(1);
   }
 };

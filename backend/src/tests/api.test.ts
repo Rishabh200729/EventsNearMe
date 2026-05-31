@@ -64,14 +64,21 @@ describe('Auth Routes', () => {
   });
 
   it('should login user', async () => {
-    const loginData = {
+    const userData = {
       email: 'test@example.com',
-      password: 'password123'
+      password: 'password123',
+      firstName: 'John',
+      lastName: 'Doe'
     };
+
+    await request(app)
+      .post('/api/auth/register')
+      .send(userData)
+      .expect(201);
 
     const response = await request(app)
       .post('/api/auth/login')
-      .send(loginData)
+      .send({ email: userData.email, password: userData.password })
       .expect(200);
 
     expect(response.body.success).toBe(true);

@@ -1,7 +1,6 @@
 import request from 'supertest';
 import app from '../app.js';
 import { User } from '../models/User.js';
-import { redisClient } from '../config/redis.config.js';
 
 describe('AuthController Integration Tests', () => {
     const testUser = {
@@ -25,8 +24,7 @@ describe('AuthController Integration Tests', () => {
     });
 
     afterAll(async () => {
-        // Cleanup
-        await redisClient.quit();
+        // Redis cleanup is handled in setup.ts
     });
 
     describe('POST /api/auth/register', () => {
@@ -59,6 +57,11 @@ describe('AuthController Integration Tests', () => {
 
     describe('POST /api/auth/login', () => {
         it('should login successfully with correct credentials', async () => {
+            await request(app)
+                .post('/api/auth/register')
+                .send(testUser)
+                .expect(201);
+
             const response = await request(app)
                 .post('/api/auth/login')
                 .send({

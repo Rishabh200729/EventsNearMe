@@ -154,7 +154,7 @@ export class AuthController {
     try {
       const { token } = req.params;
 
-      const user = await this.authService.verifyEmail(token);
+      const user = await this.authService.verifyEmail(token as string);
 
       if (!user) {
         res.status(400).json({

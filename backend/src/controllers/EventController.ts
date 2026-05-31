@@ -7,7 +7,6 @@ export class EventController {
 
   // Create event
   createEvent = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-    console.log(req.body);
     try {
       const eventData = {
         ...req.body,
@@ -29,7 +28,6 @@ export class EventController {
   getEvents = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { category, limit = 50 } = req.query;
-
       let events;
       if (category) {
         events = await this.eventService.getEventsByCategory(
@@ -52,9 +50,7 @@ export class EventController {
 
   getEventsByOrganizer = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      console.log(req.user);
       const events = await this.eventService.getEventsByOrganizer(req.user.id);
-      console.log("events", events);
       res.json({
         success: true,
         data: events,
@@ -69,8 +65,7 @@ export class EventController {
   getEventById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      const event = await this.eventService.getEventById(id);
-
+      const event = await this.eventService.getEventById(id as string);
       if (!event) {
         res.status(404).json({
           success: false,
@@ -139,7 +134,7 @@ export class EventController {
   updateEvent = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      const event = await this.eventService.updateEvent(id, req.body, req.user!._id);
+      const event = await this.eventService.updateEvent(id as string, req.body, req.user!._id);
 
       if (!event) {
         res.status(404).json({
@@ -169,7 +164,6 @@ export class EventController {
         });
         return;
       }
-      console.log("req.params", req.params);
       const deleted = await this.eventService.deleteEvent(id, req.user!._id);
 
       if (!deleted) {
@@ -193,7 +187,7 @@ export class EventController {
   bookmarkEvent = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      await this.eventService.bookmarkEvent(id, req.user!._id);
+      await this.eventService.bookmarkEvent(id as string, req.user!._id);
 
       res.json({
         success: true,
@@ -208,7 +202,7 @@ export class EventController {
   unbookmarkEvent = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      await this.eventService.unbookmarkEvent(id, req.user!._id);
+      await this.eventService.unbookmarkEvent(id as string, req.user!._id);
 
       res.json({
         success: true,

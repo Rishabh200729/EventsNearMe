@@ -1,13 +1,16 @@
 import BookingRepository from '../repositories/BookingRepository.js';
 import EventRepository from '../repositories/EventRepository.js';
+import userRepository from '../repositories/UserRepository.js';
 import { redisClient } from '../config/redis.config.js';
 import { logger } from '../config/logger.js';
 import { IBooking } from '../models/Booking.js';
+import { EmailService } from './EmailService.js';
 
 export class BookingService {
   private bookingRepo = BookingRepository;
   private eventRepo = EventRepository;
-
+  private userRepo = userRepository;
+  
   async createBooking(
     eventId: string,
     userId: string,
@@ -17,10 +20,7 @@ export class BookingService {
     const availableKey = `event_available:${eventId}`;
 
     // Acquire distributed lock (10 second timeout)
-    const lockAcquired = await redisClient.set(lockKey, 'locked', {
-      EX: 10,
-      NX: true
-    } as any);
+    const lockAcquired = await redisClient.set(lockKey, 'locked', 'EX', 10, 'NX');
 
     if (!lockAcquired) {
       throw new Error('System busy, please try again');
@@ -44,12 +44,15 @@ export class BookingService {
       }
 
       // Get current available seats from Redis cache
-      let availableSeats = parseInt(await redisClient.get(availableKey) || '0');
+      const cached = await redisClient.get(availableKey);
+      let availableSeats: number;
 
       // If not in cache, get from database and cache it
-      if (availableSeats === 0) {
+      if (cached === null) {
         availableSeats = event.availableSeats;
         await redisClient.set(availableKey, availableSeats.toString());
+      } else {
+        availableSeats = parseInt(cached);
       }
 
       if (availableSeats < quantity) {
@@ -79,7 +82,13 @@ export class BookingService {
 
       // TODO: Send confirmation notification
       // await this.notificationService.sendBookingConfirmation(booking);
-
+      const user = await this.userRepo.findById(userId);
+      if(user) {
+        logger.info(`Sending booking confirmation email to ${user.email} for booking ${booking._id}`);
+        EmailService.sendBookingConfirmationEmail(user.email, {title : event.title, quantity: booking.quantity, totalAmount: booking.totalAmount}).catch(err => {
+          logger.error(`Failed to send booking confirmation email for booking ${booking._id}:`, err);
+        });
+      }
       return booking;
     } finally {
       // Always release the lock

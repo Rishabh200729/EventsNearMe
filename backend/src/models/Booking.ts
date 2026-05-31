@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IBooking extends Document {
-  _id: string;
   eventId: string;
   userId: string;
   status: 'reserved' | 'confirmed' | 'cancelled' | 'refunded';
@@ -63,8 +62,10 @@ const BookingSchema = new Schema<IBooking>({
 });
 
 // Indexes
-BookingSchema.index({ eventId: 1, userId: 1 });
-BookingSchema.index({ userId: 1, status: 1 });
+BookingSchema.index({ eventId: 1, userId: 1, status: 1 });
+BookingSchema.index({ userId: 1, status: 1, createdAt: -1 });
+BookingSchema.index({ eventId: 1, status: 1, createdAt: -1 });
+BookingSchema.index({ eventId: 1 });
 BookingSchema.index({ status: 1, expiresAt: 1 });
 BookingSchema.index({ createdAt: -1 });
 

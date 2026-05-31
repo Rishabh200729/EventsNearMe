@@ -63,8 +63,8 @@ const EventSchema = new Schema<IEvent>({
       validate: {
         validator: function (coords: number[]) {
           return coords.length === 2 &&
-            coords[0] >= -180 && coords[0] <= 180 && // longitude
-            coords[1] >= -90 && coords[1] <= 90;     // latitude
+            coords[0]! >= -180 && coords[0]! <= 180 && // longitude
+            coords[1]! >= -90 && coords[1]! <= 90;     // latitude
         },
         message: 'Invalid coordinates'
       }
@@ -87,8 +87,8 @@ const EventSchema = new Schema<IEvent>({
     required: true,
     min: 0,
     validate: {
-      validator: function (this: IEvent, value: number) {
-        return value <= this.capacity;
+      validator: function (value: number) {
+        return value <= (this as unknown as IEvent).capacity;
       },
       message: 'Available seats cannot exceed capacity'
     }
@@ -123,15 +123,16 @@ const EventSchema = new Schema<IEvent>({
 });
 
 // Indexes
-EventSchema.index({ location: '2dsphere' });
+EventSchema.index({ location: '2dsphere', date: 1 });
 EventSchema.index({ date: 1 });
-EventSchema.index({ category: 1 });
-EventSchema.index({ organizerId: 1 });
+EventSchema.index({ category: 1, date: 1 });
+EventSchema.index({ organizerId: 1, createdAt: -1 });
 EventSchema.index({ createdAt: -1 });
 
 // Virtual for booking percentage
 EventSchema.virtual('bookingPercentage').get(function () {
-  return ((this.capacity - this.availableSeats) / this.capacity) * 100;
+  const s = this as unknown as IEvent;
+  return ((s.capacity - s.availableSeats) / s.capacity) * 100;
 });
 
 // Instance method to check if event is full

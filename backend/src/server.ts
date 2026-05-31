@@ -2,11 +2,13 @@ import app from './app.js';
 import { logger } from './config/logger.js';
 import { connectDB } from './config/database.js';
 import { redisClient } from './config/redis.config.js';
+import { seedDemoUsers } from './seed.js';
 
 const PORT = process.env.PORT || 5000;
 
 // Connect to databases
-connectDB();
+await connectDB();
+await seedDemoUsers();
 redisClient.connect().catch(console.error);
 
 // Start server

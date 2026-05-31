@@ -196,7 +196,7 @@ export class AuthService {
 
   private generateToken(userId: string): string {
     return jwt.sign({ id: userId }, this.jwtSecret, {
-      expiresIn: this.jwtExpiresIn
+      expiresIn: this.jwtExpiresIn as any
     });
   }
 

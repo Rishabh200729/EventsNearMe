@@ -14,6 +14,7 @@ export interface IUser extends Document {
   emailVerificationExpires?: Date;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  refreshToken?: string;
   preferences: {
     notifications: boolean;
     location: {
@@ -67,6 +68,7 @@ const UserSchema = new Schema<IUser>({
   emailVerificationExpires: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  refreshToken: String,
   preferences: {
     notifications: {
       type: Boolean,
@@ -85,12 +87,14 @@ const UserSchema = new Schema<IUser>({
 // Indexes
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ role: 1 });
+UserSchema.index({ emailVerificationToken: 1, emailVerificationExpires: 1 });
+UserSchema.index({ passwordResetToken: 1, passwordResetExpires: 1 });
 
 // Pre-save middleware to hash password
 UserSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
 
-  const salt = await bcrypt.genSalt(12);
+  const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
