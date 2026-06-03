@@ -23,8 +23,13 @@ export default function NearbyEvents({ user }: { user?: any }) {
     const loading = !userLoc || swrLoading;
     const error = geoError || (swrError ? "Failed to load nearby events." : null);
 
+    // Fetch user's bookings to filter out already-booked events
+    const { data: bookingsData } = useSWR('/api/bookings', fetcher, { revalidateOnFocus: false });
+    const bookedEventIds = new Set((bookingsData?.data || []).map((b: any) => b.eventId));
+    const filteredEvents = nearbyEvents.filter((e: any) => e._id && !bookedEventIds.has(e._id));
+
     // 2. Direct map assignment
-    const mapEvents = nearbyEvents;
+    const mapEvents = filteredEvents;
 
     // 3. Auto-sync SWR when global state changes 
     useEffect(() => {
@@ -107,9 +112,9 @@ export default function NearbyEvents({ user }: { user?: any }) {
                     <Loader2 className="w-10 h-10 text-primary animate-spin" />
                     <p className="text-muted-foreground animate-pulse">Finding events near you...</p>
                 </div>
-            ) : nearbyEvents.length > 0 ? (
+            ) : filteredEvents.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {nearbyEvents.map((event: any) => (
+                    {filteredEvents.map((event: any) => (
                         <Event
                             key={event._id}
                             id={event._id}

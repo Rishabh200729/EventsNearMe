@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import EventService from '../services/EventService.js';
+import BookingRepository from '../repositories/BookingRepository.js';
 import { AuthRequest } from '../middleware/auth.js';
 
 export class EventController {
@@ -74,10 +76,27 @@ export class EventController {
         return;
       }
 
-      res.json({
-        success: true,
-        data: event
-      });
+      const response: any = { success: true, data: event };
+
+      // Optionally check if the current user has booked this event
+      let token: string | undefined;
+      if (req.headers.authorization?.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+      }
+      if (!token && req.cookies?.auth_token) {
+        token = req.cookies.auth_token;
+      }
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+          const booking = await BookingRepository.findUserBookingForEvent(decoded.id, id as string);
+          response.hasBooked = !!booking;
+        } catch {
+          // Token invalid or expired — just skip
+        }
+      }
+
+      res.json(response);
     } catch (error) {
       next(error);
     }

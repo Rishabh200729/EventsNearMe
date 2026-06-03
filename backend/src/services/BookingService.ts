@@ -5,6 +5,7 @@ import { redisClient } from '../config/redis.config.js';
 import { logger } from '../config/logger.js';
 import { IBooking } from '../models/Booking.js';
 import { publishEmailJob } from '../jobs/emailQueue.js';
+import notificationService from './NotificationService.js';
 
 export class BookingService {
   private bookingRepo = BookingRepository;
@@ -80,7 +81,16 @@ export class BookingService {
 
       logger.info(`Booking created: ${booking._id} for event ${eventId} by user ${userId}`);
 
-      // INFO: Send confirmation notification
+      // Send real-time notification
+      await notificationService.createAndPublish(
+        userId,
+        'booking_confirmed',
+        'Booking Confirmed',
+        `Your booking for "${event.title}" (x${quantity}) — $${totalAmount.toFixed(2)}`,
+        { eventId, bookingId: booking._id.toString(), quantity, totalAmount }
+      );
+
+      // Send email confirmation
       const user = await this.userRepo.findById(userId);
       if(user) {
         logger.info(`Sending booking confirmation email to ${user.email} for booking ${booking._id}`);
@@ -97,9 +107,17 @@ export class BookingService {
     }
   }
 
-  async getUserBookings(userId: string, status?: string): Promise<IBooking[]> {
+  async getUserBookings(userId: string, status?: string): Promise<any[]> {
     try {
-      return await this.bookingRepo.findByUser(userId, status);
+      const bookings = await this.bookingRepo.findByUser(userId, status);
+      const eventIds = [...new Set(bookings.map(b => b.eventId))];
+      const events = await this.eventRepo.findByIds(eventIds);
+      const eventMap = new Map(events.map(e => [e._id.toString(), e]));
+
+      return bookings.map(booking => ({
+        ...booking.toObject(),
+        event: eventMap.get(booking.eventId) || null,
+      }));
     } catch (error) {
       logger.error('Error in getUserBookings service:', error);
       throw error;
@@ -160,6 +178,14 @@ export class BookingService {
 
         logger.info(`Booking cancelled: ${bookingId}`);
       }
+
+      await notificationService.createAndPublish(
+        userId,
+        'booking_cancelled',
+        'Booking Cancelled',
+        `Your booking for "${event.title}" has been cancelled.`,
+        { eventId: booking.eventId, bookingId }
+      );
 
       return updatedBooking;
     } catch (error) {

@@ -4,13 +4,15 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { bookEventAction } from "@/actions/booking-action";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
 
 const Page = ({params}:{params : Promise<{id : string}>}) => {
     const { id } = use(params);
     const router = useRouter();
     const { data, error, mutate } = useSWR(`/api/events/${id}`, fetcher);
     const [booking, setBooking] = useState<{ loading: boolean; message: string; success?: boolean }>({ loading: false, message: "" });
+
+    const alreadyBooked = data?.hasBooked;
 
     const handleBook = async () => {
         setBooking({ loading: true, message: "" });
@@ -42,10 +44,10 @@ const Page = ({params}:{params : Promise<{id : string}>}) => {
 
                     <button
                         onClick={handleBook}
-                        disabled={booking.loading || data.data.availableSeats === 0}
+                        disabled={booking.loading || data.data.availableSeats === 0 || alreadyBooked}
                         className="premium-button w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {booking.loading ? "Booking..." : data.data.availableSeats === 0 ? "Sold Out" : "Book Now"}
+                        {alreadyBooked ? "Already Booked" : booking.loading ? "Booking..." : data.data.availableSeats === 0 ? "Sold Out" : "Book Now"}
                     </button>
 
                     {booking.message && (

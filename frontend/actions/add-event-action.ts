@@ -15,6 +15,7 @@ export async function addEventAction(formData: FormData) {
     const desc = formData.get("desc") as string;
     const date = formData.get("date") as string;
     const category = formData.get("category") as string;
+    const price = parseFloat(formData.get("price") as string) || 0;
 
     const lat = formData.get("lat") as string;
     const lng = formData.get("lng") as string;
@@ -28,9 +29,9 @@ export async function addEventAction(formData: FormData) {
             type: "Point",
             coordinates: [parseFloat(lng), parseFloat(lat)]
         } : undefined,
-        capacity: 100, // Or whatever default is expected
+        capacity: 100,
         availableSeats: 100,
-        price: 0
+        price,
     };
 
     const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/events`, {

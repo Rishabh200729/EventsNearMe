@@ -21,8 +21,8 @@ export const authenticate = async (
     }
 
     // Check for token in cookies
-    if (!token && req.cookies?.token) {
-      token = req.cookies.token;
+    if (!token && (req.cookies?.auth_token || req.cookies?.token)) {
+      token = req.cookies.auth_token || req.cookies.token;
     }
 
     if (!token) {

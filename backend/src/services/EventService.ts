@@ -3,6 +3,7 @@ import BookingRepository from '../repositories/BookingRepository.js';
 import { redisClient } from '../config/redis.config.js';
 import { logger } from '../config/logger.js';
 import { IEvent } from '../models/Event.js';
+import notificationService from './NotificationService.js';
 
 export class EventService {
   private eventRepo = EventRepository;
@@ -146,6 +147,18 @@ export class EventService {
       // Invalidate caches
       await this.invalidateEventCaches();
 
+      // Notify users who booked this event
+      const bookings = await this.bookingRepo.findByEvent(id);
+      for (const booking of bookings) {
+        notificationService.createAndPublish(
+          booking.userId,
+          'event_updated',
+          'Event Updated',
+          `"${event.title}" has been updated. Check the details!`,
+          { eventId: id }
+        );
+      }
+
       logger.info(`Event updated: ${id}`);
       return updatedEvent;
     } catch (error) {
@@ -165,22 +178,26 @@ export class EventService {
         throw new Error('Unauthorized to delete this event');
       }
 
-      // Check if there are confirmed bookings
-      const confirmedBookings = await this.bookingRepo.findByEvent(id, 'confirmed');
-      if (confirmedBookings.length > 0) {
-        throw new Error('Cannot delete event with confirmed bookings');
+      // Cancel all bookings for this event and return seats
+      const allBookings = await this.bookingRepo.findByEvent(id);
+      for (const booking of allBookings) {
+        await this.bookingRepo.updateStatus(booking._id.toString(), 'cancelled');
+        await this.eventRepo.updateAvailableSeats(id, -booking.quantity);
+
+        notificationService.createAndPublish(
+          booking.userId,
+          'event_deleted',
+          'Event Cancelled',
+          `"${event.title}" has been cancelled by the organizer.`,
+          { eventId: id }
+        );
       }
 
       const deleted = await this.eventRepo.delete(id);
 
       if (deleted) {
-        // Cancel any reserved bookings
-        await this.bookingRepo.cancelExpiredReservations();
-
-        // Invalidate caches
         await this.invalidateEventCaches();
-
-        logger.info(`Event deleted: ${id}`);
+        logger.info(`Event deleted: ${id} (cancelled ${allBookings.length} bookings)`);
       }
 
       return deleted;

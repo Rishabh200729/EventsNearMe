@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './authRoutes.js';
 import eventRoutes from './eventRoutes.js';
 import bookingRoutes from './bookingRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
 
 const router = Router();
 
@@ -9,6 +10,7 @@ const router = Router();
 router.use('/auth', authRoutes);
 router.use('/events', eventRoutes);
 router.use('/bookings', bookingRoutes);
+router.use('/notifications', notificationRoutes);
 
 // API info
 router.get('/', (req, res) => {
@@ -19,7 +21,8 @@ router.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       events: '/api/events',
-      bookings: '/api/bookings'
+      bookings: '/api/bookings',
+      notifications: '/api/notifications',
     }
   });
 });

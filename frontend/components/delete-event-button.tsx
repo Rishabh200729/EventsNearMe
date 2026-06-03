@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { deleteEventAction } from "../actions/delete-event-action";
 
@@ -8,11 +8,10 @@ export default function DeleteEventButton({ eventId }: { eventId: string }) {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleDelete = async () => {
+        if (!window.confirm("Delete this event? All bookings will be cancelled.")) return;
         setIsDeleting(true);
         try {
             await deleteEventAction(eventId);
-            alert("Event deleted successfully");
-            // Refresh the page to see the updated events list
             window.location.reload();
         } catch (error) {
             console.error("Delete error:", error);
@@ -26,9 +25,13 @@ export default function DeleteEventButton({ eventId }: { eventId: string }) {
         <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="flex items-center gap-2 ml-auto bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 disabled:bg-red-400 transition"
+            className="text-sm flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
         >
-            <Trash2 size={18} />
+            {isDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+                <Trash2 className="w-4 h-4" />
+            )}
             {isDeleting ? "Deleting..." : "Delete"}
         </button>
     );

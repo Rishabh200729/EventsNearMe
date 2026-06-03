@@ -1,9 +1,29 @@
-import Link from "next/link";
-import { logout } from "@/actions/logout";
-import { validateRequest } from "@/lib/auth";
+"use client";
 
-export default async function Navbar() {
-  const { user } = await validateRequest();
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Bell } from "lucide-react";
+import { logout } from "@/actions/logout";
+import { NotificationBadge } from "@/components/NotificationBadge";
+
+export default function Navbar() {
+  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setUser({
+            name: data.data.firstName + " " + data.data.lastName,
+            role: data.data.role,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [pathname]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass px-6 py-4 flex items-center transition-all duration-300">
@@ -16,12 +36,27 @@ export default async function Navbar() {
 
       <div className="flex items-center ml-auto gap-6">
         {user && (
-          <Link
-            href="/explore"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Explore
-          </Link>
+          <>
+            <Link
+              href="/explore"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Explore
+            </Link>
+            <Link
+              href="/my-bookings"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              My Bookings
+            </Link>
+            <Link
+              href="/notifications"
+              className="text-sm font-medium hover:text-primary transition-colors relative"
+            >
+              <Bell className="w-5 h-5" />
+              <NotificationBadge />
+            </Link>
+          </>
         )}
         {user && user.role === "organizer" && (
           <>

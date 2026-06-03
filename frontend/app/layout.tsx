@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./Navbar";
+import { NotificationSSE } from "@/components/NotificationSSE";
 import { AppWrapper } from "@/app/Context/store";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,6 +22,7 @@ export default function RootLayout({
       <AppWrapper>
         <body className={`${inter.className} min-h-screen`}>
           <Navbar />
+          <NotificationSSE />
           <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
             {children}
           </main>

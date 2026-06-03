@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import { connectDB } from './config/database.js';
 import { redisClient } from './config/redis.config.js';
 import routes from './routes/index.js';
@@ -22,6 +23,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Request logging
 app.use((req, res, next) => {

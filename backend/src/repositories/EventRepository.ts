@@ -77,6 +77,15 @@ export class EventRepository {
     }
   }
 
+  async findByIds(ids: string[]): Promise<IEvent[]> {
+    try {
+      return await Event.find({ _id: { $in: ids } }).populate('organizerId', 'firstName lastName');
+    } catch (error) {
+      logger.error('Error finding events by IDs:', error);
+      throw error;
+    }
+  }
+
   async update(id: string, updateData: Partial<IEvent>): Promise<IEvent | null> {
     try {
       return await Event.findByIdAndUpdate(
