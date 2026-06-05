@@ -82,16 +82,33 @@ export default function Creator({ user, addOptimisticEvent }: { user: user, addO
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <label htmlFor="price" className="text-sm font-medium text-muted-foreground">Ticket Price</label>
-                    <input
-                        type="number"
-                        name="price"
-                        id="price"
-                        placeholder="Free = 0"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-foreground"
-                        required
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label htmlFor="price" className="text-sm font-medium text-muted-foreground">Ticket Price ($)</label>
+                        <input
+                            type="number"
+                            name="price"
+                            id="price"
+                            placeholder="Free = 0"
+                            min="0"
+                            step="0.01"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-foreground"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label htmlFor="capacity" className="text-sm font-medium text-muted-foreground">Capacity</label>
+                        <input
+                            type="number"
+                            name="capacity"
+                            id="capacity"
+                            placeholder="Number of seats"
+                            min="1"
+                            defaultValue={100}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-foreground"
+                            required
+                        />
+                    </div>
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-white/5">

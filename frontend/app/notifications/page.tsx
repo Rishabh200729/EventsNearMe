@@ -51,20 +51,20 @@ function NotificationCard({ notif, onMarkRead }: { notif: any; onMarkRead: (id: 
 }
 
 export default function NotificationsPage() {
-  const { data, error, isLoading, mutate } = useSWR('/api/notifications', fetcher, {
-    refreshInterval: 30000,
-  });
+  const { data, error, isLoading, mutate } = useSWR('/api/notifications', fetcher);
   const [markingAll, setMarkingAll] = useState(false);
 
   const markAsRead = async (id: string) => {
     await fetch(`/api/notifications/${id}/read`, { method: 'PUT', credentials: 'include' });
     mutate();
+    window.dispatchEvent(new CustomEvent('notifications-read'));
   };
 
   const markAllAsRead = async () => {
     setMarkingAll(true);
     await fetch('/api/notifications/read-all', { method: 'PUT', credentials: 'include' });
     await mutate();
+    window.dispatchEvent(new CustomEvent('notifications-read'));
     setMarkingAll(false);
   };
 

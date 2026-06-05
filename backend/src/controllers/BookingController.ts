@@ -90,6 +90,25 @@ export class BookingController {
       next(error);
     }
   };
+  getCheckinInfo = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const info = await this.bookingService.getCheckinInfo(id as string);
+      res.json({ success: true, data: info });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  checkInUser = async(req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const booking = await this.bookingService.checkIn(id as string);
+      res.json({ success : true , data : booking});
+    }catch(error){
+      next(error);
+    }
+  }
 
   // Get booking stats (organizer only)
   getBookingStats = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {

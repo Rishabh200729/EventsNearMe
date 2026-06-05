@@ -12,6 +12,8 @@ router.use(authenticate);
 router.get('/', BookingController.getUserBookings);
 router.post('/events/:eventId', bookingLimiter, BookingController.createBooking);
 router.delete('/:id', BookingController.cancelBooking);
+router.get('/:id/checkin-info', requireOrganizer, BookingController.getCheckinInfo);
+router.put('/:id/checkin', requireOrganizer, BookingController.checkInUser);
 
 // Organizer routes
 router.get('/events/:eventId/stats', requireOrganizer, BookingController.getEventBookings);

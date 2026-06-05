@@ -16,6 +16,7 @@ export async function addEventAction(formData: FormData) {
     const date = formData.get("date") as string;
     const category = formData.get("category") as string;
     const price = parseFloat(formData.get("price") as string) || 0;
+    const capacity = parseInt(formData.get("capacity") as string) || 100;
 
     const lat = formData.get("lat") as string;
     const lng = formData.get("lng") as string;
@@ -29,8 +30,8 @@ export async function addEventAction(formData: FormData) {
             type: "Point",
             coordinates: [parseFloat(lng), parseFloat(lat)]
         } : undefined,
-        capacity: 100,
-        availableSeats: 100,
+        capacity,
+        availableSeats: capacity,
         price,
     };
 

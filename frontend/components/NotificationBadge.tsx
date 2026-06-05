@@ -5,9 +5,7 @@ import { useEffect, useState } from "react";
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
 
 export function NotificationBadge() {
-  const { data, mutate } = useSWR('/api/notifications/unread-count', fetcher, {
-    refreshInterval: 30000,
-  });
+  const { data, mutate } = useSWR('/api/notifications/unread-count', fetcher);
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
@@ -17,7 +15,11 @@ export function NotificationBadge() {
       setTimeout(() => setAnimate(false), 1000);
     };
     window.addEventListener('new-notification', handler);
-    return () => window.removeEventListener('new-notification', handler);
+    window.addEventListener('notifications-read', handler);
+    return () => {
+      window.removeEventListener('new-notification', handler);
+      window.removeEventListener('notifications-read', handler);
+    };
   }, [mutate]);
 
   const count = data?.data?.count ?? 0;

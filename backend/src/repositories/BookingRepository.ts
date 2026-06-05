@@ -113,6 +113,14 @@ export class BookingRepository {
     }
   }
 
+  async markAsCheckedIn(id: string): Promise<IBooking | null> {
+    return Booking.findByIdAndUpdate(
+      id,
+      { checkedIn: true, checkedInAt: new Date() },
+      { new: true }
+    );
+  }
+
   async getBookingStats(eventId: string): Promise<{
     total: number;
     confirmed: number;

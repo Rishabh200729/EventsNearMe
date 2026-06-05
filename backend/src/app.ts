@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import { connectDB } from './config/database.js';
 import { redisClient } from './config/redis.config.js';
 import routes from './routes/index.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import errorHandler from './middleware/errorHandler.js';
 import { logger } from './config/logger.js';
 
 // Load environment variables

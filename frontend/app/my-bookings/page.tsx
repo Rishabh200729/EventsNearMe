@@ -1,7 +1,9 @@
 'use client';
 import useSWR from "swr";
 import Link from "next/link";
-import { Calendar, MapPin, ArrowRight, XCircle } from "lucide-react";
+import { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { Calendar, MapPin, ArrowRight, QrCode, X } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
 
@@ -12,6 +14,7 @@ const categoryIcons: Record<string, string> = {
 
 export default function MyBookings() {
   const { data, error, isLoading } = useSWR('/api/bookings', fetcher);
+  const [qrBooking, setQrBooking] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen p-6 pt-24 max-w-4xl mx-auto">
@@ -64,21 +67,53 @@ export default function MyBookings() {
                     }`}>
                       {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                     </span>
+                    {booking.checkedIn && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400">
+                        Checked In
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Qty: {booking.quantity} | Total: ${booking.totalAmount}
                   </div>
                 </div>
-                <Link
-                  href={`/events/${event._id}`}
-                  className="premium-button text-sm flex items-center gap-2 py-2.5 px-5 shrink-0"
-                >
-                  View Event
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                <div className="flex items-center gap-2 shrink-0">
+                  {!booking.checkedIn && (
+                    <button
+                      onClick={() => setQrBooking(booking._id)}
+                      className="text-sm flex items-center gap-2 py-2.5 px-5 rounded-xl bg-white/5 border border-white/10 text-foreground font-medium hover:bg-white/10 transition-colors"
+                    >
+                    <QrCode className="w-4 h-4" />
+                    Show QR
+                  </button>
+                  )}
+                  <Link
+                    href={`/events/${event._id}`}
+                    className="premium-button text-sm flex items-center gap-2 py-2.5 px-5"
+                  >
+                    View Event
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {qrBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setQrBooking(null)}>
+          <div className="bg-card p-8 rounded-2xl border border-white/10 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-end mb-2">
+              <button onClick={() => setQrBooking(null)}>
+                <X className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
+              </button>
+            </div>
+            <div className="bg-white p-4 rounded-xl">
+              <QRCodeSVG value={qrBooking} size={320} bgColor="#ffffff" fgColor="#000000" />
+            </div>
+            <p className="text-center text-sm text-muted-foreground mt-4">Show this to the organizer at check-in</p>
+          </div>
         </div>
       )}
     </div>

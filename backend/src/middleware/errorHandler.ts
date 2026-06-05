@@ -6,7 +6,7 @@ export interface CustomError extends Error {
   isOperational?: boolean;
 }
 
-export const errorHandler = (
+const errorHandler = (
   err: CustomError,
   req: Request,
   res: Response,
