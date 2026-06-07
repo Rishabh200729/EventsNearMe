@@ -1,16 +1,16 @@
 import express from 'express';
+import dotenv from 'dotenv';
+// Load environment variables before importing other modules
+dotenv.config();
+
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './config/database.js';
 import { redisClient } from './config/redis.config.js';
 import routes from './routes/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import { logger } from './config/logger.js';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 

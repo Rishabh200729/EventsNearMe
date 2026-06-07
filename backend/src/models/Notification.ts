@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface INotification extends Document {
   userId: string;
-  type: 'booking_confirmed' | 'booking_cancelled' | 'event_updated' | 'event_deleted' | 'event_reminder';
+  type: 'booking_confirmed' | 'booking_cancelled' | 'event_updated' | 'event_deleted' | 'event_reminder' | 'event_completed' | 'organizer_event_completed' | 'waitlist_joined' | 'waitlist_promoted';
   title: string;
   message: string;
   data?: Record<string, any>;
@@ -19,7 +19,7 @@ const NotificationSchema = new Schema<INotification>({
   },
   type: {
     type: String,
-    enum: ['booking_confirmed', 'booking_cancelled', 'event_updated', 'event_deleted', 'event_reminder'],
+    enum: ['booking_confirmed', 'booking_cancelled', 'event_updated', 'event_deleted', 'event_reminder', 'event_completed', 'organizer_event_completed', 'waitlist_joined', 'waitlist_promoted'],
     required: true,
   },
   title: {

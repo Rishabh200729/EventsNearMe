@@ -1,6 +1,7 @@
 import BookingRepository from "../repositories/BookingRepository.js";
 import EventRepository from "../repositories/EventRepository.js";
 import userRepository from "../repositories/UserRepository.js";
+import WaitlistRepository from "../repositories/WaitlistRepository.js";
 import { redisClient } from "../config/redis.config.js";
 import { logger } from "../config/logger.js";
 import { IBooking } from "../models/Booking.js";
@@ -11,6 +12,7 @@ export class BookingService {
   private bookingRepo = BookingRepository;
   private eventRepo = EventRepository;
   private userRepo = userRepository;
+  private waitlistRepo = WaitlistRepository;
 
   async createBooking(
     eventId: string,
@@ -40,8 +42,8 @@ export class BookingService {
         throw new Error("Event not found");
       }
 
-      if (event.date <= new Date()) {
-        throw new Error("Event has already started");
+      if (event.date <= new Date() || event.status === 'completed') {
+        throw new Error("Event has already started or completed");
       }
 
       // Check if user already has a booking
@@ -137,16 +139,23 @@ export class BookingService {
     }
   }
 
-  async getCheckinInfo(bookingId: string): Promise<any> {
+  async getCheckinInfo(bookingId: string, organizerId?: string): Promise<any> {
     const booking = await this.bookingRepo.findById(bookingId);
     if (!booking) throw new Error("Booking not found");
 
     const event = await this.eventRepo.findById(booking.eventId);
+    if (!event) throw new Error("Event not found");
+
+    const eventOrganizerId = (event.organizerId as any)?._id?.toString() || event.organizerId.toString();
+    if (organizerId && eventOrganizerId !== organizerId.toString()) {
+      throw new Error("Unauthorized: this booking belongs to an event you don't own");
+    }
+
     const user = await this.userRepo.findById(booking.userId);
 
     return {
       ...booking.toObject(),
-      event: event ? { _id: event._id, title: event.title, date: event.date, category: event.category } : null,
+      event: { _id: event._id, title: event.title, date: event.date, category: event.category },
       user: user ? { _id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email } : null,
     };
   }
@@ -158,7 +167,8 @@ export class BookingService {
     try {
       // Verify organizer owns the event
       const event = await this.eventRepo.findById(eventId);
-      if (!event || event.organizerId !== organizerId) {
+      const eventOrganizerId = event ? ((event.organizerId as any)?._id?.toString() || event.organizerId.toString()) : null;
+      if (!event || eventOrganizerId !== organizerId.toString()) {
         throw new Error("Unauthorized to view event bookings");
       }
 
@@ -218,6 +228,9 @@ export class BookingService {
         await redisClient.incrby(availableKey, booking.quantity);
 
         logger.info(`Booking cancelled: ${bookingId}`);
+
+        // Auto-promote from waitlist
+        await this.promoteFromWaitlist(booking.eventId);
       }
 
       await notificationService.createAndPublish(
@@ -235,7 +248,7 @@ export class BookingService {
     }
   }
 
-  async checkIn(bookingId: string): Promise<IBooking | null> {
+  async checkIn(bookingId: string, organizerId?: string): Promise<IBooking | null> {
     const booking = await this.bookingRepo.findById(bookingId);
     if (!booking) throw new Error("Booking not found");
     if (booking.checkedIn) throw new Error("Already checked in");
@@ -245,6 +258,11 @@ export class BookingService {
     const event = await this.eventRepo.findById(booking.eventId);
     if (!event) throw new Error("Event not found");
 
+    const eventOrganizerId = (event.organizerId as any)?._id?.toString() || event.organizerId.toString();
+    if (organizerId && eventOrganizerId !== organizerId.toString()) {
+      throw new Error("Unauthorized: this booking belongs to an event you don't own");
+    }
+
     return await this.bookingRepo.markAsCheckedIn(bookingId);
   }
 
@@ -252,7 +270,8 @@ export class BookingService {
     try {
       // Verify organizer owns the event
       const event = await this.eventRepo.findById(eventId);
-      if (!event || event.organizerId !== organizerId) {
+      const eventOrganizerId = event ? ((event.organizerId as any)?._id?.toString() || event.organizerId.toString()) : null;
+      if (!event || eventOrganizerId !== organizerId.toString()) {
         throw new Error("Unauthorized to view booking stats");
       }
 
@@ -294,6 +313,171 @@ export class BookingService {
     } catch (error) {
       logger.error('Error in cleanupExpiredReservations:', error);
       throw error;
+    }
+  }
+
+  // ── Waitlist Methods ──
+
+  async joinWaitlist(eventId: string, userId: string, quantity = 1): Promise<any> {
+    try {
+      const event = await this.eventRepo.findById(eventId);
+      if (!event) throw new Error("Event not found");
+
+      if (event.status !== 'upcoming' || event.date <= new Date()) {
+        throw new Error("Cannot join waitlist for past or completed events");
+      }
+
+      // Check if user already has a booking
+      const existingBooking = await this.bookingRepo.findUserBookingForEvent(userId, eventId);
+      if (existingBooking) {
+        throw new Error("You already have a booking for this event");
+      }
+
+      // Check if user is already on the waitlist
+      const existingWaitlist = await this.waitlistRepo.findByEventAndUser(eventId, userId);
+      if (existingWaitlist) {
+        throw new Error("You are already on the waitlist for this event");
+      }
+
+      // Only allow joining waitlist if the event is full
+      if (event.availableSeats >= quantity) {
+        throw new Error("Seats are still available — book directly instead");
+      }
+
+      const entry = await this.waitlistRepo.add(eventId, userId, quantity);
+      const position = await this.waitlistRepo.getPosition(eventId, userId);
+
+      // Notify the user
+      await notificationService.createAndPublish(
+        userId,
+        "waitlist_joined",
+        "Waitlist Joined",
+        `You are #${position} on the waitlist for "${event.title}".`,
+        { eventId, position }
+      );
+
+      logger.info(`User ${userId} joined waitlist for event ${eventId} at position ${position}`);
+
+      return { entry, position };
+    } catch (error) {
+      logger.error("Error in joinWaitlist service:", error);
+      throw error;
+    }
+  }
+
+  async leaveWaitlist(eventId: string, userId: string): Promise<boolean> {
+    try {
+      const removed = await this.waitlistRepo.remove(eventId, userId);
+      if (!removed) throw new Error("You are not on the waitlist for this event");
+
+      logger.info(`User ${userId} left waitlist for event ${eventId}`);
+      return true;
+    } catch (error) {
+      logger.error("Error in leaveWaitlist service:", error);
+      throw error;
+    }
+  }
+
+  async getWaitlistStatus(eventId: string, userId: string): Promise<any> {
+    try {
+      const entry = await this.waitlistRepo.findByEventAndUser(eventId, userId);
+      if (!entry) {
+        return { onWaitlist: false, position: -1, total: await this.waitlistRepo.getWaitlistCount(eventId) };
+      }
+      const position = await this.waitlistRepo.getPosition(eventId, userId);
+      const total = await this.waitlistRepo.getWaitlistCount(eventId);
+      return { onWaitlist: true, position, total, quantity: entry.quantity };
+    } catch (error) {
+      logger.error("Error in getWaitlistStatus service:", error);
+      throw error;
+    }
+  }
+
+  async getEventWaitlist(eventId: string, organizerId: string): Promise<any[]> {
+    try {
+      const event = await this.eventRepo.findById(eventId);
+      const eventOrganizerId = event ? ((event.organizerId as any)?._id?.toString() || event.organizerId.toString()) : null;
+      if (!event || eventOrganizerId !== organizerId.toString()) {
+        throw new Error("Unauthorized to view waitlist");
+      }
+
+      const waitlist = await this.waitlistRepo.getEventWaitlist(eventId);
+      
+      // Populate user info manually since Waitlist doesn't populate by default
+      const populatedWaitlist = await Promise.all(waitlist.map(async (entry, index) => {
+        const user = await this.userRepo.findById(entry.userId);
+        return {
+          ...entry.toObject(),
+          position: index + 1,
+          user: user ? { _id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email } : null
+        };
+      }));
+
+      return populatedWaitlist;
+    } catch (error) {
+      logger.error("Error in getEventWaitlist service:", error);
+      throw error;
+    }
+  }
+
+  private async promoteFromWaitlist(eventId: string): Promise<void> {
+    try {
+      const event = await this.eventRepo.findById(eventId);
+      if (!event || event.status !== 'upcoming' || event.date <= new Date()) return;
+
+      // Keep promoting while seats are available and people are waiting
+      let availableSeats = event.availableSeats;
+      while (availableSeats > 0) {
+        const nextInLine = await this.waitlistRepo.findNextInLine(eventId);
+        if (!nextInLine) break;
+
+        if (nextInLine.quantity > availableSeats) break;
+
+        // Remove from waitlist
+        await this.waitlistRepo.remove(eventId, nextInLine.userId);
+
+        // Create confirmed booking
+        const totalAmount = event.price * nextInLine.quantity;
+        const booking = await this.bookingRepo.create({
+          eventId,
+          userId: nextInLine.userId,
+          quantity: nextInLine.quantity,
+          totalAmount,
+          status: "confirmed",
+        });
+
+        // Deduct seats
+        await this.eventRepo.updateAvailableSeats(eventId, nextInLine.quantity);
+        const availableKey = `event_available:${eventId}`;
+        await redisClient.decrby(availableKey, nextInLine.quantity);
+        availableSeats -= nextInLine.quantity;
+
+        // Increment recent bookings for trending
+        await this.eventRepo.incrementRecentBookings(eventId);
+
+        // Notify promoted user
+        await notificationService.createAndPublish(
+          nextInLine.userId,
+          "waitlist_promoted",
+          "You Got a Spot!",
+          `A spot opened up for "${event.title}"! Your booking (x${nextInLine.quantity}) — $${totalAmount.toFixed(2)} has been confirmed.`,
+          { eventId, bookingId: booking._id.toString(), quantity: nextInLine.quantity, totalAmount }
+        );
+
+        // Send email
+        const user = await this.userRepo.findById(nextInLine.userId);
+        if (user) {
+          await publishEmailJob(user.email, "Waitlist Promotion — Booking Confirmed", {
+            title: event.title,
+            quantity: nextInLine.quantity,
+            totalAmount,
+          });
+        }
+
+        logger.info(`Promoted user ${nextInLine.userId} from waitlist for event ${eventId}`);
+      }
+    } catch (error) {
+      logger.error("Error in promoteFromWaitlist:", error);
     }
   }
 }

@@ -3,6 +3,7 @@ import useSWR from "swr";
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { bookEventAction } from "@/actions/booking-action";
+import { joinWaitlistAction } from "@/actions/waitlist-action";
 
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
 
@@ -17,6 +18,15 @@ const Page = ({params}:{params : Promise<{id : string}>}) => {
     const handleBook = async () => {
         setBooking({ loading: true, message: "" });
         const result = await bookEventAction(id);
+        setBooking({ loading: false, message: result.message, success: result.success });
+        if (result.success) {
+            mutate();
+        }
+    };
+
+    const handleWaitlist = async () => {
+        setBooking({ loading: true, message: "" });
+        const result = await joinWaitlistAction(id);
         setBooking({ loading: false, message: result.message, success: result.success });
         if (result.success) {
             mutate();
@@ -42,13 +52,23 @@ const Page = ({params}:{params : Promise<{id : string}>}) => {
                         <span>Available: {data.data.availableSeats} / {data.data.capacity}</span>
                     </div>
 
-                    <button
-                        onClick={handleBook}
-                        disabled={booking.loading || data.data.availableSeats === 0 || alreadyBooked}
-                        className="premium-button w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {alreadyBooked ? "Already Booked" : booking.loading ? "Booking..." : data.data.availableSeats === 0 ? "Sold Out" : "Book Now"}
-                    </button>
+                    {data.data.availableSeats === 0 && data.data.status !== 'completed' ? (
+                        <button
+                            onClick={handleWaitlist}
+                            disabled={booking.loading || alreadyBooked}
+                            className="premium-button w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed border border-primary/50"
+                        >
+                            {alreadyBooked ? "Already Booked/Waitlisted" : booking.loading ? "Joining..." : "Join Waitlist"}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleBook}
+                            disabled={booking.loading || alreadyBooked || data.data.status === 'completed'}
+                            className="premium-button w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {data.data.status === 'completed' ? "Event Completed" : alreadyBooked ? "Already Booked" : booking.loading ? "Booking..." : "Book Now"}
+                        </button>
+                    )}
 
                     {booking.message && (
                         <p className={`text-sm text-center ${booking.success ? "text-green-600" : "text-red-500"}`}>

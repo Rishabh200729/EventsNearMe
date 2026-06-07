@@ -142,7 +142,7 @@ export default function Creator({ user, addOptimisticEvent }: { user: user, addO
                             <option value="Tech">Tech</option>
                             <option value="Music">Music</option>
                             <option value="Sports">Sports</option>
-                            <option value="Arts">Arts</option>
+                            <option value="Art">Art</option>
                             <option value="Food">Food</option>
                             <option value="Business">Business</option>
                             <option value="Education">Education</option>

@@ -1,5 +1,6 @@
 import EventRepository from '../repositories/EventRepository.js';
 import BookingRepository from '../repositories/BookingRepository.js';
+import BookmarkRepository from '../repositories/BookmarkRepository.js';
 import { redisClient } from '../config/redis.config.js';
 import { logger } from '../config/logger.js';
 import { IEvent } from '../models/Event.js';
@@ -8,6 +9,7 @@ import notificationService from './NotificationService.js';
 export class EventService {
   private eventRepo = EventRepository;
   private bookingRepo = BookingRepository;
+  private bookmarkRepo = BookmarkRepository;
 
   async createEvent(eventData: Partial<IEvent>): Promise<IEvent> {
     try {
@@ -28,6 +30,10 @@ export class EventService {
 
       // Invalidate caches so new events show up immediately
       await this.invalidateEventCaches();
+
+      // Add to Redis completion queue
+      const score = new Date(event.date).getTime();
+      await redisClient.zadd('events:completion', score, event._id.toString());
 
       logger.info(`Event created: ${event._id} by organizer ${event.organizerId}`);
       return event;
@@ -147,6 +153,12 @@ export class EventService {
       // Invalidate caches
       await this.invalidateEventCaches();
 
+      // Update Redis completion queue if date changed
+      if (updateData.date && updatedEvent) {
+        const score = new Date(updatedEvent.date).getTime();
+        await redisClient.zadd('events:completion', score, id);
+      }
+
       // Notify users who booked this event
       const bookings = await this.bookingRepo.findByEvent(id);
       for (const booking of bookings) {
@@ -197,6 +209,7 @@ export class EventService {
 
       if (deleted) {
         await this.invalidateEventCaches();
+        await redisClient.zrem('events:completion', id);
         logger.info(`Event deleted: ${id} (cancelled ${allBookings.length} bookings)`);
       }
 
@@ -206,11 +219,87 @@ export class EventService {
       throw error;
     }
   }
+  async processEventCompletion(): Promise<number> {
+    try {
+      const now = Date.now();
+      // Get all expired event IDs from Redis sorted set
+      const expiredEventIds = await redisClient.zrangebyscore('events:completion', 0, now);
+      if (expiredEventIds.length === 0) return 0;
 
+      logger.info(`Found ${expiredEventIds.length} completed events in Redis`);
+
+      for (const eventId of expiredEventIds) {
+        const event = await this.eventRepo.findById(eventId);
+        if (event && event.status === 'upcoming') {
+          // 1. Update status in DB
+          await this.eventRepo.updateStatus(eventId, 'completed');
+
+          // 2. Invalidate discovery caches
+          await this.invalidateEventCaches();
+
+          // 3. Fetch bookings and notify attendees
+          const bookings = await this.bookingRepo.findByEvent(eventId);
+          const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+
+          for (const booking of confirmedBookings) {
+            await notificationService.createAndPublish(
+              booking.userId,
+              'event_completed',
+              'Event Completed',
+              `Thank you for attending "${event.title}"! We hope you had a great time.`,
+              { eventId }
+            );
+          }
+
+          // 4. Calculate stats and notify organizer
+          const totalRevenue = confirmedBookings.reduce((sum, b) => sum + b.totalAmount, 0);
+          const checkedInCount = confirmedBookings.filter(b => b.checkedIn).length;
+
+          await notificationService.createAndPublish(
+            event.organizerId,
+            'organizer_event_completed',
+            'Your Event Has Completed',
+            `Congratulations! "${event.title}" is completed. Attendees: ${checkedInCount}/${confirmedBookings.length}, Revenue: $${totalRevenue}.`,
+            { eventId }
+          );
+
+          logger.info(`Successfully completed event: ${eventId}`);
+        }
+
+        // Remove from Redis completion queue
+        await redisClient.zrem('events:completion', eventId);
+      }
+
+      return expiredEventIds.length;
+    } catch (error) {
+      logger.error('Error in processEventCompletion service:', error);
+      throw error;
+    }
+  }
+
+  async syncUpcomingEventsToRedis(): Promise<number> {
+    try {
+      const upcomingEvents = await this.eventRepo.findUpcomingEvents();
+      let count = 0;
+      for (const event of upcomingEvents) {
+        const score = new Date(event.date).getTime();
+        await redisClient.zadd('events:completion', score, event._id.toString());
+        count++;
+      }
+      logger.info(`Synced ${count} upcoming events to Redis completion queue`);
+      return count;
+    } catch (error) {
+      logger.error('Error syncing upcoming events to Redis:', error);
+      throw error;
+    }
+  }
   async bookmarkEvent(eventId: string, userId: string): Promise<void> {
     try {
-      // Check if already bookmarked (you'd need a Bookmark model for this)
-      // For now, just increment
+      const exists = await this.bookmarkRepo.exists(eventId, userId);
+      if (exists) {
+        throw new Error("You have already joined/bookmarked this event");
+      }
+      await this.bookmarkRepo.create(eventId, userId);
       await this.eventRepo.incrementBookmarks(eventId);
       logger.info(`Event bookmarked: ${eventId} by user ${userId}`);
     } catch (error) {
@@ -219,10 +308,22 @@ export class EventService {
     }
   }
 
+  async getUserBookmarks(userId: string): Promise<any[]> {
+    try {
+      return await this.bookmarkRepo.findByUser(userId);
+    } catch (error) {
+      logger.error('Error in getUserBookmarks service:', error);
+      throw error;
+    }
+  }
+
   async unbookmarkEvent(eventId: string, userId: string): Promise<void> {
     try {
-      await this.eventRepo.decrementBookmarks(eventId);
-      logger.info(`Event unbookmarked: ${eventId} by user ${userId}`);
+      const deleted = await this.bookmarkRepo.delete(eventId, userId);
+      if (deleted) {
+        await this.eventRepo.decrementBookmarks(eventId);
+        logger.info(`Event unbookmarked: ${eventId} by user ${userId}`);
+      }
     } catch (error) {
       logger.error('Error in unbookmarkEvent service:', error);
       throw error;

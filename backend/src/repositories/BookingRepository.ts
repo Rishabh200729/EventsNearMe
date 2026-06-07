@@ -40,7 +40,7 @@ export class BookingRepository {
       if (status) {
         query.status = status;
       }
-      return await Booking.find(query).sort({ createdAt: -1 });
+      return await Booking.find(query).populate('userId', 'firstName lastName email').sort({ createdAt: -1 });
     } catch (error) {
       logger.error('Error finding bookings by event:', error);
       throw error;

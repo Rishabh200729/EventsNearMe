@@ -5,7 +5,7 @@ export interface IEvent extends Document {
   title: string;
   description: string;
   date: Date;
-  category: string;
+  category: 'community'|'music'|'sports'|'tech'|'food'|'art'|'business'|'education';
   location: {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
@@ -22,6 +22,7 @@ export interface IEvent extends Document {
   images?: string[];
   createdAt: Date;
   updatedAt: Date;
+  status: 'upcoming'|'completed'|'cancelled';
 }
 
 const EventSchema = new Schema<IEvent>({
@@ -103,6 +104,12 @@ const EventSchema = new Schema<IEvent>({
     type: Number,
     default: 0,
     min: 0
+  },
+  status : {
+    type : String,
+    enum : ['upcoming','completed','cancelled'],
+    default : 'upcoming',
+    required : true
   },
   bookmarks: {
     type: Number,

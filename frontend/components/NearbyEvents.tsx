@@ -6,7 +6,7 @@ import { Loader2, MapPin, AlertCircle, Map as MapIcon } from "lucide-react";
 import EventMap from "./Map";
 import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(res => res.json());
 
 export default function NearbyEvents({ user }: { user?: any }) {
     const [permissionDenied, setPermissionDenied] = useState(false);
@@ -26,6 +26,11 @@ export default function NearbyEvents({ user }: { user?: any }) {
     // Fetch user's bookings to filter out already-booked events
     const { data: bookingsData } = useSWR('/api/bookings', fetcher, { revalidateOnFocus: false });
     const bookedEventIds = new Set((bookingsData?.data || []).map((b: any) => b.eventId));
+    
+    // Fetch user's bookmarks to correctly show the Joined state
+    const { data: bookmarksData } = useSWR('/api/events/bookmarks', fetcher, { revalidateOnFocus: false });
+    const bookmarkedEventIds = new Set((bookmarksData?.data || []).map((b: any) => b.eventId));
+
     const filteredEvents = nearbyEvents.filter((e: any) => e._id && !bookedEventIds.has(e._id));
 
     // 2. Direct map assignment
@@ -123,7 +128,7 @@ export default function NearbyEvents({ user }: { user?: any }) {
                             date={event.date}
                             category={event.category}
                             organizer={event.organizerId}
-                            isJoined={false}
+                            isJoined={bookmarkedEventIds.has(event._id)}
                             distance={event.distance}
                             isOrganizer={user?.id === event.organizerId?._id || user?.id === event.organizerId}
                         />

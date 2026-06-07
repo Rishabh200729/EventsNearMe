@@ -1,6 +1,6 @@
 "use client";
 import { Calendar, CheckCircle, Loader2, Music, Code, Users, Trophy, Palette, Info, MapPin, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { joinEventAction } from "@/actions/rsvp-actions";
 import SubmitButton from "./SubmitButton";
@@ -35,6 +35,10 @@ const CategoryIcon = ({ category }: { category?: string }) => {
 export default function Event({ id, title, desc, date, category, userRole, isJoined: initialJoined, distance, organizer, isOrganizer }: propTypes) {
     const [isJoined, setIsJoined] = useState(initialJoined);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        setIsJoined(initialJoined);
+    }, [initialJoined]);
 
     const handleJoin = async () => {
         setIsLoading(true);
@@ -111,16 +115,16 @@ export default function Event({ id, title, desc, date, category, userRole, isJoi
                         onClick={handleJoin}
                         disabled={isJoined}
                         isLoading={isLoading}
-                        loadingText="Joining..."
+                        loadingText="Saving..."
                         className={`text-sm flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition-colors ${isJoined ? 'opacity-70 cursor-default' : ''}`}
                     >
                         {isJoined ? (
                             <>
                                 <CheckCircle className="w-4 h-4" />
-                                Joined
+                                Saved
                             </>
                         ) : (
-                            "Join"
+                            "Save Event"
                         )}
                     </SubmitButton>
                 </div>

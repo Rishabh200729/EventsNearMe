@@ -72,6 +72,12 @@ export default function Navbar() {
             >
               Dashboard
             </Link>
+            <Link
+              href="/organizer/checkin"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Check In
+            </Link>
           </>
         )}
         {user ? (

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Users, DollarSign, Plus, Eye, Music, Code, Trophy, Palette, User, Info, MapPin, ArrowRight } from "lucide-react";
+import { Calendar, Users, DollarSign, Plus, Eye, Music, Code, Trophy, Palette, User, Info, MapPin, ArrowRight, Camera } from "lucide-react";
 import DeleteEventButton from "../../components/delete-event-button";
 
 const categoryIcons: Record<string, { icon: any; label: string }> = {
@@ -15,7 +15,9 @@ const categoryIcons: Record<string, { icon: any; label: string }> = {
   education: { icon: Info, label: 'Education' },
 };
 
-async function Page() {
+async function Page({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const resolvedParams = await searchParams;
+  const currentTab = resolvedParams?.tab || "active";
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value;
 
@@ -49,6 +51,10 @@ async function Page() {
 
     const data = await res.json();
     const events = data?.data || [];
+
+    const activeEvents = events.filter((e: any) => e.status !== 'completed');
+    const pastEvents = events.filter((e: any) => e.status === 'completed');
+    const displayedEvents = currentTab === "past" ? pastEvents : activeEvents;
 
     const totalEvents = events.length;
     const totalSold = events.reduce((sum: number, e: any) => sum + (e.capacity - e.availableSeats), 0);
@@ -103,9 +109,33 @@ async function Page() {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-muted-foreground">Your Events</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-3">
+            <h2 className="text-lg font-semibold text-muted-foreground">Your Events</h2>
+            <div className="flex gap-4">
+              <Link
+                href="/dashboard?tab=active"
+                className={`text-sm font-semibold pb-1 border-b-2 transition-colors ${
+                  currentTab === "active"
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Active ({activeEvents.length})
+              </Link>
+              <Link
+                href="/dashboard?tab=past"
+                className={`text-sm font-semibold pb-1 border-b-2 transition-colors ${
+                  currentTab === "past"
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Past ({pastEvents.length})
+              </Link>
+            </div>
+          </div>
 
-          {events.length === 0 ? (
+          {displayedEvents.length === 0 ? (
             <div className="glass-card text-center py-20">
               <div className="p-4 rounded-full bg-primary/10 text-primary w-fit mx-auto mb-4">
                 <Calendar className="w-8 h-8" />
@@ -118,7 +148,7 @@ async function Page() {
               </Link>
             </div>
           ) : (
-            events.map((event: any) => {
+            displayedEvents.map((event: any) => {
               const cat = categoryIcons[event.category?.toLowerCase()] || categoryIcons.community;
               const CatIcon = cat.icon;
               const sold = event.capacity - event.availableSeats;
@@ -190,7 +220,25 @@ async function Page() {
                           View Event
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
-                        <DeleteEventButton eventId={event._id} />
+                        {event.status !== 'completed' && (
+                          <>
+                            <Link
+                              href={`/organizer/checkin?eventId=${event._id}`}
+                              className="text-sm py-2 px-4 rounded-xl bg-white/5 border border-white/10 text-foreground font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
+                            >
+                              <Camera className="w-4 h-4" />
+                              Check In
+                            </Link>
+                            <Link
+                              href={`/organizer/waitlist?eventId=${event._id}`}
+                              className="text-sm py-2 px-4 rounded-xl bg-white/5 border border-white/10 text-foreground font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
+                            >
+                              <Users className="w-4 h-4" />
+                              Waitlist
+                            </Link>
+                            <DeleteEventButton eventId={event._id} />
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

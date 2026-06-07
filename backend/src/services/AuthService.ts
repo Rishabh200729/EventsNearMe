@@ -8,8 +8,14 @@ import { IUser } from '../models/User.js';
 
 export class AuthService {
   private userRepo = UserRepository;
-  private jwtSecret = process.env.JWT_SECRET || 'fallback_secret';
-  private jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
+  private get jwtSecret() {
+    return process.env.JWT_SECRET || 'fallback_secret';
+  }
+
+  private get jwtExpiresIn() {
+    return process.env.JWT_EXPIRES_IN || '7d';
+  }
 
   async register(userData: {
     email: string;

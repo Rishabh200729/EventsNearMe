@@ -14,7 +14,7 @@ export function NotificationSSE() {
         return;
       }
 
-      const es = new EventSource('/api/notifications/stream');
+      const es = new EventSource('/api/notifications/stream', { withCredentials: true });
       esRef.current = es;
 
       es.onmessage = (event) => {

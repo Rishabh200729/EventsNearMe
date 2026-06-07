@@ -1,5 +1,6 @@
 import { User, IUser } from '../models/User.js';
 import { logger } from '../config/logger.js';
+import bcrypt from 'bcryptjs';
 
 export class UserRepository {
   async create(userData: Partial<IUser>): Promise<IUser> {
@@ -45,10 +46,12 @@ export class UserRepository {
 
   async updatePassword(id: string, newPassword: string): Promise<IUser | null> {
     try {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
       return await User.findByIdAndUpdate(
         id,
         {
-          password: newPassword,
+          password: hashedPassword,
           passwordResetToken: undefined,
           passwordResetExpires: undefined,
           updatedAt: new Date()

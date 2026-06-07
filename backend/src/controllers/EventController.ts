@@ -231,6 +231,23 @@ export class EventController {
       next(error);
     }
   };
+  // Get user bookmarks
+  getUserBookmarks = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // Lazy import to avoid circular dependencies if any, or just use the imported repository
+      // Wait, EventService doesn't have a getBookmarks method yet. I will add it to EventService or just import BookmarkRepository here.
+      // Let's just import BookmarkRepository at the top of EventController or call a service method.
+      // I'll call this.eventService.getUserBookmarks.
+      const bookmarks = await this.eventService.getUserBookmarks(req.user!._id);
+
+      res.json({
+        success: true,
+        data: bookmarks
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default new EventController();

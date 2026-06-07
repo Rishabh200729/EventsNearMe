@@ -33,10 +33,13 @@ export const createEventSchema = z.object({
     const eventDate = new Date(date);
     return eventDate > new Date();
   }, 'Event date must be in the future'),
-  category: z.enum(['music', 'sports', 'technology', 'food', 'art', 'business', 'education', 'other']),
+  category: z.enum(['community', 'music', 'sports', 'tech', 'food', 'art', 'business', 'education']),
   location: z.object({
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
+    type: z.literal('Point'),
+    coordinates: z.tuple([
+      z.number().min(-180).max(180), // longitude
+      z.number().min(-90).max(90)   // latitude
+    ]),
     address: z.string().optional()
   }),
   capacity: z.number().int().min(1).max(100000),

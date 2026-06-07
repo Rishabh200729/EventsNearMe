@@ -51,6 +51,7 @@ export class EventRepository {
             $maxDistance: maxDistance
           }
         },
+        status: 'upcoming',
         date: { $gte: new Date() } // Only upcoming events
       })
         .populate('organizerId', 'firstName lastName')
@@ -66,7 +67,8 @@ export class EventRepository {
     try {
       return await Event.find({
         category,
-        date: { $gte: new Date() }
+        date: { $gte: new Date() },
+        status: 'upcoming',
       })
         .populate('organizerId', 'firstName lastName')
         .sort({ date: 1 })
@@ -160,7 +162,7 @@ export class EventRepository {
 
   async getTrending(limit = 50): Promise<IEvent[]> {
     try {
-      const events = await Event.find()
+      const events = await Event.find({ status: 'upcoming'})
         .populate('organizerId', 'firstName lastName')
         .sort({ createdAt: -1 }).limit(200); // Get recent events
       // Calculate trending score
@@ -174,6 +176,39 @@ export class EventRepository {
         .slice(0, limit);
     } catch (error) {
       logger.error('Error getting trending events:', error);
+      throw error;
+    }
+  }
+  async findUpcomingEvents(): Promise<IEvent[]> {
+    try {
+      return await Event.find({ status: 'upcoming' });
+    } catch (error) {
+      logger.error('Error finding upcoming events:', error);
+      throw error;
+    }
+  }
+
+  async findEventsToComplete(): Promise<IEvent[]> {
+    try {
+      return await Event.find({
+        status: 'upcoming',
+        date: { $lt: new Date() }
+      });
+    } catch (error) {
+      logger.error('Error finding events to complete:', error);
+      throw error;
+    }
+  }
+  
+  async updateStatus(id: string, status: string): Promise<IEvent | null> {
+    try {
+      return await Event.findByIdAndUpdate(
+        id,
+        { status, updatedAt: new Date() },
+        { new: true }
+      );
+    } catch (error) {
+      logger.error('Error updating event status:', error);
       throw error;
     }
   }

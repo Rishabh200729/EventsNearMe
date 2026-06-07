@@ -12,9 +12,10 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
   const selectedCategory = params?.category;
   const baseUrl = (process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api";
 
-  const [eventsRes, bookingsRes] = await Promise.all([
+  const [eventsRes, bookingsRes, bookmarksRes] = await Promise.all([
     fetch(selectedCategory ? `${baseUrl}/events?category=${encodeURIComponent(selectedCategory)}` : `${baseUrl}/events`, { cache: 'no-store' }),
     fetch(`${baseUrl}/bookings`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }).catch(() => null),
+    fetch(`${baseUrl}/events/bookmarks`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }).catch(() => null),
   ]);
 
   const eventsData = await eventsRes.json();
@@ -29,6 +30,14 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
   }
 
   const filteredEvents = events.filter((e: any) => !bookedEventIds.has(e._id));
+
+  let rsvps: any[] = [];
+  if (bookmarksRes && bookmarksRes.ok) {
+    const bookmarksData = await bookmarksRes.json();
+    if (bookmarksData.success) {
+      rsvps = bookmarksData.data;
+    }
+  }
 
   // Decode user id from JWT without verification (already trusted from backend)
   let userId = "";
@@ -51,7 +60,7 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
             <p className="text-muted-foreground">No events found at the moment.</p>
           </div>
         ) : (
-          <EventFeed initialEvents={filteredEvents} rsvps={[]} user={user} />
+          <EventFeed initialEvents={filteredEvents} rsvps={rsvps} user={user} />
         )}
       </section>
     </div>
