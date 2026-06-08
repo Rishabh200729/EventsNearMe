@@ -14,7 +14,7 @@
     "outDir": "./dist",
     "rootDir": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "types": ["node", "jest"],
     "declaration": true,
