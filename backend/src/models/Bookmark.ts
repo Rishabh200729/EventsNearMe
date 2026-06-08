@@ -2,8 +2,8 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IBookmark extends Document {
   _id: Types.ObjectId;
-  eventId: string;
-  userId: string;
+  eventId: Types.ObjectId;
+  userId: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
