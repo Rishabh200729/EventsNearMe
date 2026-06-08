@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "npm install --include=dev && tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "worker": "npx tsx src/jobs/emailWorker.ts",
     "test": "jest",
     "test:watch": "jest --watch",
