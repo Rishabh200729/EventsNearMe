@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {},
   webpack: (config, { dev }) => {
     if (dev) {
       // Disable webpack persistent caching in dev mode to prevent file lock/UNKNOWN errors
