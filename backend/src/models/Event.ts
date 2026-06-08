@@ -136,6 +136,12 @@ EventSchema.index({ category: 1, date: 1 });
 EventSchema.index({ organizerId: 1, createdAt: -1 });
 EventSchema.index({ createdAt: -1 });
 
+// Text Search Index
+EventSchema.index(
+  { title: 'text', description: 'text', tags: 'text' },
+  { weights: { title: 10, tags: 5, description: 1 }, name: 'text_search_index' }
+);
+
 // Virtual for booking percentage
 EventSchema.virtual('bookingPercentage').get(function () {
   const s = this as unknown as IEvent;

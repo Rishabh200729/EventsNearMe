@@ -29,11 +29,12 @@ export class EventController {
   // Get all events
   getEvents = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { category, limit = 50 } = req.query;
+      const { category, search, limit = 50 } = req.query;
       let events;
-      if (category) {
-        events = await this.eventService.getEventsByCategory(
+      if (category || search) {
+        events = await this.eventService.searchEvents(
           category as string,
+          search as string,
           parseInt(limit as string)
         );
       } else {

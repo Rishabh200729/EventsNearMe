@@ -1,19 +1,24 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import EventFeed from "@/components/EventFeed";
-import CategoryFilter from "@/components/CategoryFilter";
+import SearchBar from "@/components/SearchBar";
 
-export default async function Explore({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
+export default async function Explore({ searchParams }: { searchParams: Promise<{ category?: string, q?: string }> }) {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value;
   if (!token) redirect("/login");
 
   const params = await searchParams;
   const selectedCategory = params?.category;
+  const searchQuery = params?.q;
   const baseUrl = (process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api";
 
+  const fetchUrl = new URL(`${baseUrl}/events`);
+  if (selectedCategory) fetchUrl.searchParams.append("category", selectedCategory);
+  if (searchQuery) fetchUrl.searchParams.append("search", searchQuery);
+
   const [eventsRes, bookingsRes, bookmarksRes] = await Promise.all([
-    fetch(selectedCategory ? `${baseUrl}/events?category=${encodeURIComponent(selectedCategory)}` : `${baseUrl}/events`, { cache: 'no-store' }),
+    fetch(fetchUrl.toString(), { cache: 'no-store' }),
     fetch(`${baseUrl}/bookings`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }).catch(() => null),
     fetch(`${baseUrl}/events/bookmarks`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }).catch(() => null),
   ]);
@@ -50,9 +55,9 @@ export default async function Explore({ searchParams }: { searchParams: Promise<
   return (
     <div className="space-y-12">
       <section className="space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-start gap-6">
           <h1 className="text-2xl font-bold tracking-tight">View all Events</h1>
-          <CategoryFilter />
+          <SearchBar />
         </div>
 
         {filteredEvents.length === 0 ? (

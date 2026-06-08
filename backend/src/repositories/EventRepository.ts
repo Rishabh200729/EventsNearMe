@@ -63,6 +63,35 @@ export class EventRepository {
     }
   }
 
+  async searchEvents(category?: string, search?: string, limit = 50): Promise<IEvent[]> {
+    try {
+      const query: any = { status: 'upcoming', date: { $gte: new Date() } };
+      
+      if (category) {
+        query.category = category;
+      }
+      
+      if (search) {
+        query.$text = { $search: search };
+      }
+
+      let queryBuilder = Event.find(query).populate('organizerId', 'firstName lastName');
+
+      if (search) {
+        // Sort by relevance score
+        queryBuilder = queryBuilder.sort({ score: { $meta: 'textScore' } });
+      } else {
+        // Sort by date upcoming
+        queryBuilder = queryBuilder.sort({ date: 1 });
+      }
+
+      return await queryBuilder.limit(limit);
+    } catch (error) {
+      logger.error('Error searching events:', error);
+      throw error;
+    }
+  }
+
   async findByCategory(category: string, limit = 50): Promise<IEvent[]> {
     try {
       return await Event.find({

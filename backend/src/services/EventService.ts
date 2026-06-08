@@ -97,6 +97,15 @@ export class EventService {
     }
   }
 
+  async searchEvents(category?: string, search?: string, limit = 50): Promise<IEvent[]> {
+    try {
+      return await this.eventRepo.searchEvents(category, search, limit);
+    } catch (error) {
+      logger.error('Error in searchEvents service:', error);
+      throw error;
+    }
+  }
+
   async getEventsByCategory(category: string, limit = 50): Promise<IEvent[]> {
     try {
       return await this.eventRepo.findByCategory(category, limit);
