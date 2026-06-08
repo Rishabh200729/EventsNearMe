@@ -12,15 +12,19 @@ export default async function Home() {
   let errorMsg = "";
 
   try {
-    const res = await fetch(`${process.env.INTERNAL_BACKEND_URL || "http://localhost:5000/api"}/auth/me`, {
+    const backendUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api";
+    const res = await fetch(`${backendUrl}/auth/me`, {
       headers: {
-        Cookie: `auth_token=${token}`
-      }
+        Cookie: `auth_token=${token}`,
+        Authorization: `Bearer ${token}`
+      },
+      cache: 'no-store'
     });
 
     if (!res.ok) {
       shouldRedirect = true;
-      errorMsg = `Status: ${res.status}`;
+      const errBody = await res.json().catch(() => null);
+      errorMsg = `Status: ${res.status} - ${errBody?.error || 'Unknown error'}`;
     } else {
       const data = await res.json();
       userId = data.data?._id || data.data?.id || "";
