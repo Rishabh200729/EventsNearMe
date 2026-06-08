@@ -24,7 +24,8 @@ export default async function Home() {
     if (!res.ok) {
       shouldRedirect = true;
       const errBody = await res.json().catch(() => null);
-      errorMsg = `Status: ${res.status} - ${errBody?.error || 'Unknown error'}`;
+      const urlSource = process.env.INTERNAL_BACKEND_URL ? 'INTERNAL' : process.env.NEXT_PUBLIC_BACKEND_URL ? 'PUBLIC' : 'LOCALHOST_FALLBACK';
+      errorMsg = `Status: ${res.status} | URL: ${urlSource} | Backend: ${errBody?.error || 'Unknown'} | Token: ${token.substring(0, 10)}...`;
     } else {
       const data = await res.json();
       userId = data.data?._id || data.data?.id || "";
