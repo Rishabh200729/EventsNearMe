@@ -59,11 +59,11 @@ export const authenticate = async (
 
       req.user = user;
       next();
-    } catch (err) {
+    } catch (err: any) {
       logger.error('JWT verification failed:', err);
       res.status(401).json({
         success: false,
-        error: 'Not authorized to access this route'
+        error: `Auth Error: ${err.message || 'Unknown error during authentication'}`
       });
     }
   } catch (error) {
