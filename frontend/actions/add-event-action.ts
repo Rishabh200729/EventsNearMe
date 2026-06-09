@@ -2,6 +2,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getBackendUrl } from "@/lib/backend-url";
 
 export async function addEventAction(formData: FormData) {
     const cookieStore = await cookies();
@@ -35,7 +36,7 @@ export async function addEventAction(formData: FormData) {
         price,
     };
 
-    const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/events`, {
+    const response = await fetch(`${getBackendUrl()}/events`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

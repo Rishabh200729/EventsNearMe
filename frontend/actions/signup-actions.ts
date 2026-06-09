@@ -1,6 +1,7 @@
 "use server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getBackendUrl } from "@/lib/backend-url";
 
 export async function signUpAction(formData: FormData) {
   const email = formData.get("email") as string;
@@ -10,7 +11,7 @@ export async function signUpAction(formData: FormData) {
   const role = formData.get("role") as string;
 
   try {
-      const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/auth/register`, {
+      const response = await fetch(`${getBackendUrl()}/auth/register`, {
           method: "POST",
           headers: {
               "Content-Type": "application/json",

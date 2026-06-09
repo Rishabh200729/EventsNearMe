@@ -43,6 +43,18 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Temporary debug endpoint - echoes request headers
+app.get('/api/debug/headers', (req, res) => {
+  res.json({
+    hasAuth: !!req.headers.authorization,
+    authPrefix: req.headers.authorization?.substring(0, 20),
+    hasCookie: !!req.headers.cookie,
+    cookieValue: req.headers.cookie?.substring(0, 30),
+    parsedCookies: Object.keys(req.cookies || {}),
+    allHeaderKeys: Object.keys(req.headers)
+  });
+});
+
 // API routes
 app.use('/api', routes);
 

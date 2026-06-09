@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { getBackendUrl } from "./backend-url";
 
 export async function validateRequest() {
     const cookieStore = await cookies();
@@ -9,7 +10,7 @@ export async function validateRequest() {
     }
 
     try {
-        const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/auth/me`, {
+        const response = await fetch(`${getBackendUrl()}/auth/me`, {
             headers: {
                 "Authorization": `Bearer ${token}`
             },

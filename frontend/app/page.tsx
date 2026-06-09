@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import NearbyEvents from "@/components/NearbyEvents";
+import { getBackendUrl } from "@/lib/backend-url";
 
 export default async function Home() {
   const cookieStore = await cookies();
@@ -12,7 +13,18 @@ export default async function Home() {
   let errorMsg = "";
 
   try {
-    const backendUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api";
+    const backendUrl = getBackendUrl();
+
+    // Debug: Check what headers actually arrive at the backend
+    const debugRes = await fetch(`${backendUrl}/debug/headers`, {
+      headers: {
+        Cookie: `auth_token=${token}`,
+        Authorization: `Bearer ${token}`
+      },
+      cache: 'no-store'
+    });
+    const debugData = await debugRes.json().catch(() => ({ error: 'debug fetch failed' }));
+
     const res = await fetch(`${backendUrl}/auth/me`, {
       headers: {
         Cookie: `auth_token=${token}`,
@@ -24,8 +36,7 @@ export default async function Home() {
     if (!res.ok) {
       shouldRedirect = true;
       const errBody = await res.json().catch(() => null);
-      const urlSource = process.env.INTERNAL_BACKEND_URL ? 'INTERNAL' : process.env.NEXT_PUBLIC_BACKEND_URL ? 'PUBLIC' : 'LOCALHOST_FALLBACK';
-      errorMsg = `Status: ${res.status} | URL: ${urlSource} | Backend: ${errBody?.error || 'Unknown'} | Token: ${token.substring(0, 10)}...`;
+      errorMsg = `Status: ${res.status} | Auth: ${debugData.hasAuth} | Cookie: ${debugData.hasCookie} | Headers: ${JSON.stringify(debugData.allHeaderKeys)} | Backend: ${errBody?.error || 'Unknown'}`;
     } else {
       const data = await res.json();
       userId = data.data?._id || data.data?.id || "";

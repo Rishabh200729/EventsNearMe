@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { getBackendUrl } from "@/lib/backend-url";
 
 export async function joinEventAction(eventId: string) {
     const cookieStore = await cookies();
@@ -12,7 +13,7 @@ export async function joinEventAction(eventId: string) {
     }
 
     try {
-        const response = await fetch(`${(process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL) || "http://localhost:5000/api"}/events/${eventId}/bookmark`, {
+        const response = await fetch(`${getBackendUrl()}/events/${eventId}/bookmark`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${token}`

@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { getBackendUrl } from "@/lib/backend-url";
 
 export async function joinWaitlistAction(eventId: string, quantity: number = 1) {
     const cookieStore = await cookies();
@@ -12,7 +13,7 @@ export async function joinWaitlistAction(eventId: string, quantity: number = 1) 
     }
 
     try {
-        const apiUrl = `${process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api"}/bookings/events/${eventId}/waitlist`;
+        const apiUrl = `${getBackendUrl()}/bookings/events/${eventId}/waitlist`;
         const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
