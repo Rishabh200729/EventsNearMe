@@ -6,6 +6,7 @@ dotenv.config();
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
 import { connectDB } from './config/database.js';
 import { redisClient } from './config/redis.config.js';
 import routes from './routes/index.js';
@@ -43,15 +44,32 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Temporary debug endpoint - echoes request headers
+// Temporary debug endpoint - tests JWT verification
 app.get('/api/debug/headers', (req, res) => {
+  let token = '';
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  if (!token && req.cookies?.auth_token) {
+    token = req.cookies.auth_token;
+  }
+
+  let verifyResult = 'no token found';
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+      verifyResult = `OK - userId: ${decoded.id}, exp: ${new Date((decoded.exp || 0) * 1000).toISOString()}`;
+    } catch (e: any) {
+      verifyResult = `FAILED: ${e.message}`;
+    }
+  }
+
   res.json({
-    hasAuth: !!req.headers.authorization,
-    authPrefix: req.headers.authorization?.substring(0, 20),
-    hasCookie: !!req.headers.cookie,
-    cookieValue: req.headers.cookie?.substring(0, 30),
-    parsedCookies: Object.keys(req.cookies || {}),
-    allHeaderKeys: Object.keys(req.headers)
+    tokenFound: !!token,
+    tokenPrefix: token ? token.substring(0, 15) + '...' : 'none',
+    jwtVerify: verifyResult,
+    jwtSecretSet: !!process.env.JWT_SECRET,
+    jwtSecretLength: (process.env.JWT_SECRET || '').length
   });
 });
 
