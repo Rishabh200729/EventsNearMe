@@ -38,13 +38,17 @@ export const authenticate = async (
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
 
       // Check if token is blacklisted (for logout)
-      const isBlacklisted = await redisClient.get(`blacklist:${token}`);
-      if (isBlacklisted) {
-        res.status(401).json({
-          success: false,
-          error: 'Token has been invalidated'
-        });
-        return;
+      try {
+        const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+        if (isBlacklisted) {
+          res.status(401).json({
+            success: false,
+            error: 'Token has been invalidated'
+          });
+          return;
+        }
+      } catch (redisError) {
+        logger.warn('Redis is unavailable, skipping blacklist check:', redisError);
       }
 
       // Get user from token
