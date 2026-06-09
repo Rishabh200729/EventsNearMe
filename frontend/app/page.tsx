@@ -36,7 +36,7 @@ export default async function Home() {
     if (!res.ok) {
       shouldRedirect = true;
       const errBody = await res.json().catch(() => null);
-      errorMsg = `Status: ${res.status} | Auth: ${debugData.hasAuth} | Cookie: ${debugData.hasCookie} | Headers: ${JSON.stringify(debugData.allHeaderKeys)} | Backend: ${errBody?.error || 'Unknown'}`;
+      errorMsg = `Status: ${res.status} | TokenFound: ${debugData.tokenFound} | JWT Verify: ${debugData.jwtVerify} | SecretLength: ${debugData.jwtSecretLength} | Backend: ${errBody?.error || 'Unknown'}`;
     } else {
       const data = await res.json();
       userId = data.data?._id || data.data?.id || "";
